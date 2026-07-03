@@ -5,6 +5,7 @@ using Api.Models;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Xunit;
+using static AwesomeAssertions.AssertionExtensions;
 
 namespace Tests;
 
@@ -25,7 +26,7 @@ public sealed class DeployTests : IClassFixture<TestFixture>
     {
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), null, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -34,7 +35,7 @@ public sealed class DeployTests : IClassFixture<TestFixture>
         using var content = new StringContent("not-json", Encoding.UTF8, "application/json");
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -45,7 +46,7 @@ public sealed class DeployTests : IClassFixture<TestFixture>
             JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -56,7 +57,7 @@ public sealed class DeployTests : IClassFixture<TestFixture>
             JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
@@ -72,10 +73,10 @@ public sealed class DeployTests : IClassFixture<TestFixture>
             JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
 
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
 
         var errorResponse = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
-        Assert.Contains("docker-compose.yml", errorResponse, StringComparison.Ordinal);
+        errorResponse.Should().Contain("docker-compose.yml");
     }
 
     [Fact]
@@ -93,7 +94,7 @@ public sealed class DeployTests : IClassFixture<TestFixture>
                 JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
             var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
 
-            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         }
     }
 
@@ -125,20 +126,18 @@ public sealed class DeployTests : IClassFixture<TestFixture>
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), content).ConfigureAwait(false);
 
         var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-        Assert.True(response.StatusCode == HttpStatusCode.OK, $"{response.StatusCode}: {responseBody}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var containers = await dockerClient.Containers.ListContainersAsync(
             new ContainersListParameters { All = true }).ConfigureAwait(false);
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{containerName}"));
-        Assert.NotNull(container);
-        Assert.Equal(expectedImage, container.Image);
+        container.Should().NotBeNull();
+        container.Image.Should().Be(expectedImage);
 
         var inspect = await dockerClient.Containers.InspectContainerAsync(container.ID).ConfigureAwait(false);
-        Assert.NotNull(inspect.Config.Env);
-        Assert.True(inspect.Config.Env!.Any(e => e == "COMMON=COMMON_VALUE"),
-            $"COMMON=COMMON_VALUE not found in container environment. Env: {string.Join(", ", inspect.Config.Env ?? Array.Empty<string>())}");
-        Assert.True(inspect.Config.Env!.Any(e => e == "SECRET=SECRET_DEV"),
-            $"SECRET=SECRET_DEV not found in container environment. Env: {string.Join(", ", inspect.Config.Env ?? Array.Empty<string>())}");
+        inspect.Config.Env.Should().NotBeNull();
+        inspect.Config.Env.Should().Contain("COMMON=COMMON_VALUE");
+        inspect.Config.Env.Should().Contain("SECRET=SECRET_DEV");
         await StopAndRemoveContainer(containerName).ConfigureAwait(false);
     }
 

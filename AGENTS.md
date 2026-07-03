@@ -53,12 +53,10 @@
 │       ├── DeployRequestValidator.cs    # request field validation
 │       └── DeployerSettingsValidator.cs # IValidateOptions for settings
 └── tests/
-    ├── Tests.csproj                # xunit, Moq, Docker.DotNet, Mvc.Testing
-    ├── BaseTestClass.cs            # WebApplicationFactory, mock Docker client & IProcessRunner
-    ├── Tests.cs                    # 7 mocked tests: validation, missing compose, success path
-    ├── RealDockerTestClass.cs      # WebApplicationFactory for real Docker tests
-    ├── RealDockerTests.cs          # 2 real Docker tests: deploys actual containers
-    ├── test.kdbx                   # KeePassXC 2 binary test database (used by RealDockerTests)
+    ├── Tests.csproj                # xunit.v3, AwesomeAssertions, Docker.DotNet, Mvc.Testing
+    ├── TestFixture.cs              # WebApplicationFactory, real Docker client, ProcessRunner
+    ├── DeployTests.cs              # 8 tests: validation, missing compose, real deploys
+    ├── test.kdbx                   # KeePassXC 2 binary test database
     └── projects/
         └── test-project/
             └── docker-compose.yml  # Deploys ghcr.io/michaeltg17/deployer:${TAG}
@@ -98,31 +96,31 @@ dotnet test tests/Tests.csproj
 
 ```
 └── tests/
-    ├── Tests.csproj                # xunit, Moq, Docker.DotNet, Mvc.Testing
-    ├── BaseTestClass.cs            # WebApplicationFactory, mock Docker client & IProcessRunner
-    ├── Tests.cs                    # 7 mocked tests: validation, missing compose, success path
-    ├── RealDockerTestClass.cs      # WebApplicationFactory for real Docker tests
-    ├── RealDockerTests.cs          # 2 real Docker tests: deploys actual containers
-    ├── test.kdbx                   # KeePassXC 2 binary test database (used by RealDockerTests)
+    ├── Tests.csproj                # xunit.v3, AwesomeAssertions, Docker.DotNet, Mvc.Testing
+    ├── TestFixture.cs              # WebApplicationFactory, real Docker client, ProcessRunner
+    ├── DeployTests.cs              # 8 tests: validation, missing compose, real deploys
+    ├── test.kdbx                   # KeePassXC 2 binary test database
     └── projects/
         └── test-project/
             └── docker-compose.yml  # Deploys ghcr.io/michaeltg17/deployer:${TAG}
 ```
 
-### Mocked Tests (Tests.cs)
+### Tests (DeployTests.cs)
 
-7 tests using `BaseTestClass` with Moq — never call real Docker or KeePass. Validates request parsing, missing fields, missing compose file, and the success path (compose file created on disk, all deps mocked).
-
-### Real Docker Tests (RealDockerTests.cs)
-
-2 tests using `RealDockerTestClass` — deploy real containers against Docker daemon:
+8 tests using `TestFixture` — all run against real Docker daemon and real KeePassXC database (`test.kdbx`). Uses AwesomeAssertions for fluent assertions. Validates request parsing, missing fields, missing compose file, and successful deploys.
 
 | Test | Description |
 |------|-------------|
-| `ValidRequest_Latest_Returns200_AndStartsContainer` | Deploys `test-project` with `tag: "latest"`, verifies 200 + `docker inspect --format '{{.Config.Image}}'` confirms `ghcr.io/michaeltg17/deployer:latest` |
-| `ValidRequest_CommitTag_Returns200_AndStartsContainer` | Deploys `test-project` with `tag: "21ec91a"`, verifies 200 + correct image tag |
+| `MissingBody_Returns400` | POST with no body returns 400 |
+| `InvalidBody_Returns400` | POST with non-JSON body returns 400 |
+| `MissingEnvironment_Returns400` | Missing environment field returns 400 |
+| `MissingTag_Returns400` | Missing tag field returns 400 |
+| `ValidRequest_NoComposeFile_Returns400` | No compose file returns 400 with error message containing `docker-compose.yml` |
+| `ValidRequest_EachEnvironment_Returns400` | Each environment (dev, qa, prod) without compose file returns 400 |
+| `ValidRequest_Latest_Returns200_AndStartsContainer` | Deploys `test-project` with `tag: "latest"`, verifies 200 and correct image |
+| `ValidRequest_CommitTag_Returns200_AndStartsContainer` | Deploys `test-project` with `tag: "21ec91a"`, verifies 200 and correct image |
 
-`RealDockerTestClass` points `TestProjectsDir` at `tests/projects/` (the pre-existing test fixture compose files), uses real Docker.DotNet client, and replaces `IProcessRunner` with real `ProcessRunner`. All commands (`keepassxc-cli`, `docker`) execute against the real Docker daemon and real KeePassXC database (`test.kdbx`). `ProcessRunner` pipes stdin directly to processes for password input.
+`TestFixture` points `TestProjectsDir` at `tests/projects/`, uses real Docker.DotNet client, and uses real `ProcessRunner`. All commands (`keepassxc-cli`, `docker`) execute against the real Docker daemon and real KeePassXC database (`test.kdbx`).
 
 ## Coding Conventions
 
