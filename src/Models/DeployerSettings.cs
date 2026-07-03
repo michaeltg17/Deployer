@@ -4,7 +4,7 @@ internal sealed class DeployerSettings
 {
     public required string ImageRepo { get; set; }
 
-    public required string KeePassDbPath { get; set; }
+    public required string KeePassDbPath { get; set; } = "deployer.kdbx";
 
     public required string KeePassDbPassword { get; set; }
 

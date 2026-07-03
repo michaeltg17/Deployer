@@ -8,16 +8,16 @@ using Xunit;
 
 namespace Tests;
 
-public sealed class Tests : IClassFixture<BaseTestFixtures>
+public sealed class DeployTests : IClassFixture<TestFixture>
 {
     private readonly HttpClient client;
     private readonly IDockerClient dockerClient;
 
-    public Tests(BaseTestFixtures factory)
+    public DeployTests(TestFixture fixture)
     {
-        ArgumentNullException.ThrowIfNull(factory);
-        client = factory.CreateClient();
-        dockerClient = factory.DockerClient;
+        ArgumentNullException.ThrowIfNull(fixture);
+        client = fixture.CreateClient();
+        dockerClient = fixture.DockerClient;
     }
 
     [Fact]
