@@ -17,7 +17,7 @@ RUN dotnet publish src/Api.csproj -c Release -o /app
 
 # Stage 2: Runtime (alpine + docker-cli + keepassxc-cli for deployments)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
-RUN apk add --no-cache docker-cli keepassxc
+RUN apk add --no-cache docker-cli docker-cli-compose keepassxc
 WORKDIR /app
 COPY --from=build /app .
 
