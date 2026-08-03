@@ -9,8 +9,4 @@
     <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
   </ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Docker.DotNet" />
-  </ItemGroup>
-
-</Project>
+  </Project>
