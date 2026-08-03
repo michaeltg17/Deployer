@@ -16,7 +16,7 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
     private readonly string testKdbxPath;
     private readonly DockerClient dockerClient;
 
-    public IDockerClient DockerClient => Services.GetRequiredService<IDockerClient>();
+    public IDockerClient DockerClient => dockerClient;
 
     public TestFixture()
     {
@@ -39,7 +39,6 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                { nameof(DeployerSettings.ImageRepo), "ghcr.io/michaeltg17/deployer" },
                 { nameof(DeployerSettings.KeePassDbPath), testKdbxPath },
                 { nameof(DeployerSettings.KeePassDbPassword), "test" },
                 { nameof(DeployerSettings.ProjectsDir), TestProjectsDir },

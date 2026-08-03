@@ -11,9 +11,6 @@ internal sealed class DeployerSettingsValidator : IValidateOptions<DeployerSetti
 
         var errors = new List<string>();
 
-        if (string.IsNullOrWhiteSpace(options.ImageRepo))
-            errors.Add($"The '{nameof(options.ImageRepo)}' setting is required");
-
         if (string.IsNullOrWhiteSpace(options.KeePassDbPath))
             errors.Add($"The '{nameof(options.KeePassDbPath)}' setting is required");
 

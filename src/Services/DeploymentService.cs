@@ -2,8 +2,6 @@ using Api.Exceptions;
 using Api.Logging;
 using Api.Models;
 using Api.Validation;
-using Docker.DotNet;
-using Docker.DotNet.Models;
 using Microsoft.Extensions.Options;
 
 namespace Api.Services;
@@ -11,7 +9,7 @@ namespace Api.Services;
 internal sealed class DeploymentService(
     ILogger<DeploymentService> logger,
     IOptions<DeployerSettings> settings,
-    IDockerClient dockerClient, KeePassEnvService keepassEnvService, IProcessRunner processRunner)
+    KeePassEnvService keepassEnvService, IProcessRunner processRunner)
 {
     private readonly DeployerSettings deployerSettings = settings.Value;
 
@@ -23,28 +21,20 @@ internal sealed class DeploymentService(
             throw validationEx;
 
         var projectDir = Path.Combine(deployerSettings.ProjectsDir, request.Project!);
-        var composeFile = Path.Combine(projectDir, "docker-compose.yml");
+        var baseComposeFile = Path.Combine(projectDir, "docker-compose.yml");
 
-        if (!File.Exists(composeFile))
-            throw new InvalidDeployRequestException($"Docker compose file not found for project '{request.Project}': {composeFile}");
+        if (!File.Exists(baseComposeFile))
+            throw new InvalidDeployRequestException($"Docker compose file not found for project '{request.Project}': {baseComposeFile}");
 
-        var image = $"{deployerSettings.ImageRepo}:{request.Tag}";
-
-        logger.LogDeploying(image, request.Project!, request.Environment!);
+        logger.LogDeploying(request.Project!, request.Environment!);
 
         logger.LogExtractingEnv(request.Project!, request.Environment!);
         var envVars = await keepassEnvService.ExtractEnvVariables(request.Project!, request.Environment!).ConfigureAwait(false);
         envVars["TAG"] = request.Tag!;
 
-        logger.LogPullingImage(image);
-        await dockerClient.Images.CreateImageAsync(
-            new ImagesCreateParameters { FromImage = deployerSettings.ImageRepo, Tag = request.Tag },
-            null,
-            new Progress<JSONMessage>()).ConfigureAwait(false);
-        logger.LogImagePulled();
-
-        logger.LogRunningCompose(composeFile);
-        var composeResult = await RunComposeUp(composeFile, envVars).ConfigureAwait(false);
+        var composeArgs = BuildComposeArgs(projectDir, request.Environment!);
+        logger.LogRunningCompose(composeArgs);
+        var composeResult = await processRunner.Run("docker", composeArgs, 300_000, projectDir, envVars).ConfigureAwait(false);
         if (composeResult.ExitCode != 0)
         {
             logger.LogComposeFailed(composeResult.Stderr);
@@ -54,10 +44,13 @@ internal sealed class DeploymentService(
         logger.LogDeploySuccess(request.Tag!, request.Project!, request.Environment!);
     }
 
-    private async Task<ProcessResult> RunComposeUp(string composeFile, Dictionary<string, string> envVars)
+    static string BuildComposeArgs(string projectDir, string environment)
     {
-        var arguments = $"compose -f \"{composeFile}\" up -d --force-recreate";
-        var workingDir = Path.GetDirectoryName(composeFile) ?? ".";
-        return await processRunner.Run("docker", arguments, 300_000, workingDir, envVars).ConfigureAwait(false);
+        var envComposeFile = Path.Combine(projectDir, $"docker-compose.{environment}.yml");
+        var hasEnvFile = File.Exists(envComposeFile);
+
+        return hasEnvFile
+            ? $"compose -f \"docker-compose.yml\" -f \"docker-compose.{environment}.yml\" up -d --force-recreate"
+            : $"compose -f \"docker-compose.yml\" up -d --force-recreate";
     }
 }

@@ -1,7 +1,6 @@
 services:
   app:
-    image: ghcr.io/michaeltg17/deployer:${TAG}
-    container_name: deployer-test-${TAG}
+    image: ${IMAGE_REPO}:${TAG}
     labels:
       - test.deployer.project=test-project
     environment:

@@ -3,7 +3,6 @@ using Api.Extensions;
 using Api.Models;
 using Api.Services;
 using Api.Validation;
-using Docker.DotNet;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,11 +15,6 @@ builder.Services
 
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton<IProcessRunner, ProcessRunner>();
-builder.Services.AddSingleton<IDockerClient>(sp =>
-{
-    var config = new DockerClientConfiguration();
-    return config.CreateClient();
-});
 builder.Services.AddSingleton<KeePassEnvService>();
 builder.Services.AddSingleton<DeploymentService>();
 
