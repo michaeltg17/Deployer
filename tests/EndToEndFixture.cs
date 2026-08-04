@@ -100,10 +100,10 @@ public sealed class EndToEndFixture : IAsyncLifetime
         await Task.Delay(2000);
 
         var inspect = await DockerClient.Containers.InspectContainerAsync(ContainerId);
-        var hostPort = inspect.NetworkSettings.Ports["8080/tcp"]![0].HostPort;
+        var containerIp = inspect.NetworkSettings.IPAddress;
         HttpClient = new HttpClient
         {
-            BaseAddress = new Uri($"http://localhost:{hostPort}"),
+            BaseAddress = new Uri($"http://{containerIp}:8080"),
         };
         HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
@@ -114,17 +114,16 @@ public sealed class EndToEndFixture : IAsyncLifetime
         {
             try
             {
-                var response = await HttpClient.GetAsync("/");
-                if (response.StatusCode is not (System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.MethodNotAllowed))
-                    continue;
-                return;
+                var response = await HttpClient.GetAsync("/GetOk");
+                if (response.IsSuccessStatusCode)
+                    return;
             }
             catch
             {
             }
             await Task.Delay(1000);
         }
-        throw new TimeoutException("Container did not become ready in time");
+        throw new TimeoutException($"Container '{ContainerId}' did not become ready in time. Run 'docker logs {ContainerId}' for details.");
     }
 
     string GetRepoRoot()
