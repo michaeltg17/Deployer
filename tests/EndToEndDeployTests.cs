@@ -1,6 +1,6 @@
 using Api.Models;
 using Docker.DotNet;
-using Docker.DotNet.Models;
+
 using Xunit;
 using static AwesomeAssertions.AssertionExtensions;
 
@@ -64,6 +64,24 @@ public sealed class EndToEndDeployTests : IClassFixture<EndToEndFixture>
 
         container.Image.Should().Be("ghcr.io/michaeltg17/deployer:21ec91a");
 
-await TestHelpers.StopAndRemoveContainer(dockerClient, containerName);
-}
+        await TestHelpers.StopAndRemoveContainer(dockerClient, containerName);
+    }
+
+    [Fact]
+    public async Task ValidRequest_NoSecrets_DisabledSetting_Returns200()
+    {
+        var containerName = "deployer-test-no-secrets-e2e";
+        await TestHelpers.StopAndRemoveContainer(dockerClient, containerName);
+
+        var response = await apiClient.Deploy(new DeployRequest
+        {
+            Project = "no-secrets",
+            Environment = "dev",
+            Tag = "no-secrets-e2e",
+        });
+
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
+
+        await TestHelpers.StopAndRemoveContainer(dockerClient, containerName);
+    }
 }

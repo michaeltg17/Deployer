@@ -1,0 +1,5 @@
+services:
+  app:
+    image: alpine
+    container_name: deployer-test-${TAG}
+    command: ["sleep", "1000000000"]

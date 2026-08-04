@@ -1,16 +1,14 @@
+using Api.Exceptions;
 using Api.Logging;
 using Api.Models;
-using Microsoft.Extensions.Options;
 
 namespace Api.Services;
 
 internal sealed class KeePassEnvService(
     ILogger<KeePassEnvService> logger,
-    IOptions<DeployerSettings> settings,
+    IDeployerSettings settings,
     IProcessRunner processRunner)
 {
-    private readonly string dbPath = settings.Value.KeePassDbPath;
-    private readonly string password = settings.Value.KeePassDbPassword;
     private readonly string projectsGroup = "projects";
 
     public async Task<Dictionary<string, string>> ExtractEnvVariables(string project, string environment)
@@ -26,7 +24,10 @@ internal sealed class KeePassEnvService(
             ParseEnvContent(envSpecific, vars);
 
         logger.LogEnvExtracted(project, environment, vars.Count);
-        return vars;
+
+        return settings.ThrowIfNoSecrets && vars.Count == 0
+            ? throw new NoSecretsFoundException(project, environment)
+            : vars;
     }
 
     private static void ParseEnvContent(string content, Dictionary<string, string> vars)
@@ -51,8 +52,8 @@ internal sealed class KeePassEnvService(
 
     private async Task<string> ExtractAttachment(string project, string attachmentName)
     {
-        var arguments = $"attachment-export --stdout \"{dbPath}\" \"{projectsGroup}/{project}\" \"{attachmentName}\"";
-        var result = await processRunner.Run("keepassxc-cli", arguments, 30_000, stdinInput: $"{password}\n");
+        var arguments = $"attachment-export --stdout \"{settings.KeePassDbPath}\" \"{projectsGroup}/{project}\" \"{attachmentName}\"";
+        var result = await processRunner.Run("keepassxc-cli", arguments, 30_000, stdinInput: $"{settings.KeePassDbPassword}\n");
 
         if (result.ExitCode != 0)
         {

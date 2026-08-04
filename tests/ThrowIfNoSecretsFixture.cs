@@ -9,8 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Tests;
 
-
-public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposable
+public sealed class ThrowIfNoSecretsFixture : WebApplicationFactory<Program>, IAsyncDisposable
 {
     public string TestProjectsDir { get; }
     private readonly string testKdbxPath;
@@ -18,9 +17,9 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
 
     public IDockerClient DockerClient => dockerClient;
 
-    public TestFixture()
+    public ThrowIfNoSecretsFixture()
     {
-        var testRoot = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(TestFixture).Assembly.Location)!, "..", "..", ".."));
+        var testRoot = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(ThrowIfNoSecretsFixture).Assembly.Location)!, "..", "..", ".."));
         testKdbxPath = Path.Combine(testRoot, "test.kdbx");
         TestProjectsDir = Path.Combine(testRoot, "projects");
 
@@ -33,7 +32,6 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         ArgumentNullException.ThrowIfNull(builder);
-        base.ConfigureWebHost(builder);
 
         builder.ConfigureAppConfiguration(config =>
         {
@@ -42,7 +40,7 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
                 { nameof(DeployerSettings.KeePassDbPath), testKdbxPath },
                 { nameof(DeployerSettings.KeePassDbPassword), "test" },
                 { nameof(DeployerSettings.ProjectsDir), TestProjectsDir },
-                { nameof(DeployerSettings.ThrowIfNoSecrets), "false" },
+                { nameof(DeployerSettings.ThrowIfNoSecrets), "true" },
             });
         });
 
@@ -58,7 +56,7 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
     private async Task CleanupTestContainers()
     {
         var containers = await dockerClient.Containers.ListContainersAsync(
-            new ContainersListParameters { All = true });
+            new ContainersListParameters { All = true }).ConfigureAwait(false);
         var testContainers = containers
             .Where(c => c.Names.Any(n => n.StartsWith("/deployer-test-", StringComparison.Ordinal)))
             .ToList();
@@ -68,17 +66,17 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
             if (container.State == "running")
             {
                 await dockerClient.Containers.StopContainerAsync(container.ID,
-                    new ContainerStopParameters());
+                    new ContainerStopParameters()).ConfigureAwait(false);
             }
             await dockerClient.Containers.RemoveContainerAsync(container.ID,
-                new ContainerRemoveParameters { Force = true });
+                new ContainerRemoveParameters { Force = true }).ConfigureAwait(false);
         }
     }
 
     public async override ValueTask DisposeAsync()
     {
-        await CleanupTestContainers();
+        await CleanupTestContainers().ConfigureAwait(false);
         dockerClient.Dispose();
-        await base.DisposeAsync();
+        await base.DisposeAsync().ConfigureAwait(false);
     }
 }

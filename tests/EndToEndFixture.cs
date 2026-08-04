@@ -1,4 +1,3 @@
-using System.Net.Http;
 using System.Net.Http.Headers;
 using Api.Services;
 using Docker.DotNet;
@@ -90,6 +89,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
             "-e", "KeePassDbPath=/test/test.kdbx",
             "-e", "KeePassDbPassword=test",
             "-e", "ProjectsDir=/projects",
+            "-e", "ThrowIfNoSecrets=false",
         });
 
         var args = $"run -d --name deployer-e2e --privileged -p 0:8080 {mounts} {envVar} {ImageName}";

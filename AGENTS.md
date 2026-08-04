@@ -33,7 +33,8 @@
 │   │   └── DeployEndpoint.cs       # POST /: JSON parsing, delegation
 │   ├── Exceptions/
 │   │   ├── DeployerException.cs    # base exception
-│   │   └── InvalidDeployRequestException.cs
+│   │   ├── InvalidDeployRequestException.cs
+│   │   └── NoSecretsFoundException.cs
 │   ├── Extensions/
 │   │   ├── ExceptionHandlerExtensions.cs  # problem+json error handler
 │   │   └── TypeExtensions.cs              # helper for exception names
@@ -55,16 +56,20 @@
 └── tests/
     ├── Tests.csproj                # xunit.v3, AwesomeAssertions, Docker.DotNet, Mvc.Testing
     ├── TestFixture.cs              # WebApplicationFactory, real Docker client, ProcessRunner
+    ├── ThrowIfNoSecretsFixture.cs  # same, but ThrowIfNoSecrets=true
     ├── DeployTests.cs              # 8 tests: validation, missing compose, real deploys
+    ├── NoSecretsTests.cs           # validates NoSecretsFoundException with setting enabled
     ├── test.kdbx                   # KeePassXC 2 binary test database
     └── projects/
-        └── test-project/
-            └── docker-compose.yml  # Deploys ghcr.io/michaeltg17/deployer:${TAG}
+        ├── test-project/
+        │   └── docker-compose.yml  # Deploys ghcr.io/michaeltg17/deployer:${TAG}
+        └── no-secrets/
+            └── docker-compose.yml  # Compose file with no matching KeePassXC entries
 ```
 
 ## Configuration
 
-All config binds from `DeployerSettings` via `builder.Configuration`. Required settings (`ImageRepo`, `KeePassDbPath`, `KeePassDbPassword`) validated at startup via `DeployerSettingsValidator`. `ProjectsDir` is optional, defaults to `/projects`. Application fails to start if any required setting is missing.
+All config binds from `DeployerSettings` via `builder.Configuration`. Required settings (`KeePassDbPath`, `KeePassDbPassword`) validated at startup via `DeployerSettingsValidator`. `ProjectsDir` defaults to `/projects`. `KeePassDbPath` defaults to `secrets.kdbx`. `ThrowIfNoSecrets` defaults to `true` — when enabled, deployment fails with `NoSecretsFoundException` if no environment variables are extracted from KeePassXC for the requested project/environment. Application fails to start if any required setting is missing.
 
 Projects are stored under `/projects/<name>/` on disk, each containing a `docker-compose.yml`. Environment secrets (`.env`, `.env.<environment>`) are stored as KeePassXC attachments under `Projects/<name>`.
 
@@ -98,16 +103,24 @@ dotnet test tests/Tests.csproj
 └── tests/
     ├── Tests.csproj                # xunit.v3, AwesomeAssertions, Docker.DotNet, Mvc.Testing
     ├── TestFixture.cs              # WebApplicationFactory, real Docker client, ProcessRunner
+    ├── ThrowIfNoSecretsFixture.cs  # same, but ThrowIfNoSecrets=true
     ├── DeployTests.cs              # 8 tests: validation, missing compose, real deploys
+    ├── NoSecretsTests.cs           # 1 test: validates NoSecretsFoundException with setting enabled
     ├── test.kdbx                   # KeePassXC 2 binary test database
     └── projects/
-        └── test-project/
-            └── docker-compose.yml  # Deploys ghcr.io/michaeltg17/deployer:${TAG}
+        ├── test-project/
+        │   └── docker-compose.yml  # Deploys ghcr.io/michaeltg17/deployer:${TAG}
+        └── no-secrets/
+            └── docker-compose.yml  # Compose file with no matching KeePassXC entries
 ```
 
 ### Tests (DeployTests.cs)
 
-8 tests using `TestFixture` — all run against real Docker daemon and real KeePassXC database (`test.kdbx`). Uses AwesomeAssertions for fluent assertions. Validates request parsing, missing fields, missing compose file, and successful deploys.
+8 tests using `TestFixture` — all run against real Docker daemon and real KeePassXC database (`test.kdbx`). Uses AwesomeAssertions for fluent assertions. Validates request parsing, missing fields, missing compose file, and successful deploys. `TestFixture` sets `ThrowIfNoSecrets=false`.
+
+### Tests (NoSecretsTests.cs)
+
+1 test using `ThrowIfNoSecretsFixture` — deploys a project with no matching KeePassXC entries, verifies it returns 500 with `NoSecretsFoundException`.
 
 | Test | Description |
 |------|-------------|

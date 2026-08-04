@@ -2,17 +2,14 @@ using Api.Exceptions;
 using Api.Logging;
 using Api.Models;
 using Api.Validation;
-using Microsoft.Extensions.Options;
 
 namespace Api.Services;
 
 internal sealed class DeploymentService(
     ILogger<DeploymentService> logger,
-    IOptions<DeployerSettings> settings,
+    IDeployerSettings settings,
     KeePassEnvService keepassEnvService, IProcessRunner processRunner)
 {
-    private readonly DeployerSettings deployerSettings = settings.Value;
-
     public async Task Deploy(DeployRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -20,7 +17,7 @@ internal sealed class DeploymentService(
         if (DeployRequestValidator.Validate(request) is { } validationEx)
             throw validationEx;
 
-        var projectDir = Path.Combine(deployerSettings.ProjectsDir, request.Project!);
+        var projectDir = Path.Combine(settings.ProjectsDir, request.Project!);
         var baseComposeFile = Path.Combine(projectDir, "docker-compose.yml");
 
         if (!File.Exists(baseComposeFile))

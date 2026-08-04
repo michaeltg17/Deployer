@@ -11,7 +11,8 @@ builder.Services
     .AddOptions<DeployerSettings>()
     .BindConfiguration("")
     .ValidateOnStart()
-    .Services.AddSingleton<IValidateOptions<DeployerSettings>, DeployerSettingsValidator>();
+    .Services.AddSingleton<IValidateOptions<DeployerSettings>, DeployerSettingsValidator>()
+    .AddSingleton<IDeployerSettings>(sp => sp.GetRequiredService<IOptions<DeployerSettings>>().Value);
 
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton<IProcessRunner, ProcessRunner>();

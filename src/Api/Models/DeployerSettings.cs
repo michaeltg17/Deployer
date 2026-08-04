@@ -1,10 +1,9 @@
 namespace Api.Models;
 
-public sealed class DeployerSettings
+public sealed class DeployerSettings : IDeployerSettings
 {
-    public required string KeePassDbPath { get; set; } = "deployer.kdbx";
-
+    public required string KeePassDbPath { get; set; } = "secrets.kdbx";
     public required string KeePassDbPassword { get; set; }
-
-    public string ProjectsDir { get; set; } = "/projects";
+    public required bool ThrowIfNoSecrets { get; set; } = true;
+    public required string ProjectsDir { get; set; } = "/projects";
 }
