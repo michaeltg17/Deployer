@@ -1,6 +1,3 @@
-using System.Net;
-using System.Text;
-using System.Text.Json;
 using Api.Models;
 using Docker.DotNet;
 using Docker.DotNet.Models;
@@ -11,83 +8,58 @@ namespace Tests;
 
 public sealed class DeployTests : IClassFixture<TestFixture>
 {
-    private readonly HttpClient client;
-    private readonly IDockerClient dockerClient;
+    readonly ApiClient apiClient;
+    readonly HttpClient client;
+    readonly IDockerClient dockerClient;
 
     public DeployTests(TestFixture fixture)
     {
         ArgumentNullException.ThrowIfNull(fixture);
         client = fixture.CreateClient();
+        apiClient = new ApiClient(client);
         dockerClient = fixture.DockerClient;
     }
 
     [Fact]
     public async Task MissingBody_Returns400()
     {
-        //When
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), null, TestContext.Current.CancellationToken);
-
-        //Then
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task InvalidBody_Returns400()
     {
-        //Given
-        using var content = new StringContent("not-json", Encoding.UTF8, "application/json");
-
-        //When
+        using var content = new StringContent("not-json", System.Text.Encoding.UTF8, "application/json");
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
-
-        //Then
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task MissingEnvironment_Returns400()
     {
-        //Given
-        var body = new DeployRequest { Project = "test", Tag = "v1.0.0" };
-        using var content = new StringContent(
-            JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-
-        //When
-        var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
-
-        //Then
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var response = await apiClient.Deploy(new DeployRequest { Project = "test", Tag = "v1.0.0" });
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task MissingTag_Returns400()
     {
-        //Given
-        var body = new DeployRequest { Project = "test", Environment = "dev" };
-        using var content = new StringContent(
-            JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-
-        //When
-        var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
-
-        //Then
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var response = await apiClient.Deploy(new DeployRequest { Project = "test", Environment = "dev" });
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task ValidRequest_NoComposeFile_Returns400()
     {
-        var body = new DeployRequest
+        var response = await apiClient.Deploy(new DeployRequest
         {
             Project = "test",
             Environment = "dev",
             Tag = "v1.0.0"
-        };
-        using var content = new StringContent(
-            JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
+        });
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
 
         var errorResponse = await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
         errorResponse.Should().Contain("docker-compose.yml");
@@ -98,17 +70,13 @@ public sealed class DeployTests : IClassFixture<TestFixture>
     {
         foreach (var environment in new[] { "dev", "qa", "prod" })
         {
-            var body = new DeployRequest
+            var response = await apiClient.Deploy(new DeployRequest
             {
                 Project = "test",
                 Environment = environment,
                 Tag = "v1.0.0"
-            };
-            using var content = new StringContent(
-                JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-            var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
-
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            });
+            response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
         }
     }
 
@@ -129,18 +97,13 @@ public sealed class DeployTests : IClassFixture<TestFixture>
         var containerName = $"deployer-test-{tag}";
         await StopAndRemoveContainer(containerName);
 
-        var body = new DeployRequest
+        var response = await apiClient.Deploy(new DeployRequest
         {
             Project = project,
             Environment = environment,
             Tag = tag,
-        };
-        using var content = new StringContent(
-            JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync(new Uri("/", UriKind.Relative), content);
-
-        var responseBody = await response.Content.ReadAsStringAsync();
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        });
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
         var containers = await dockerClient.Containers.ListContainersAsync(
             new ContainersListParameters { All = true });

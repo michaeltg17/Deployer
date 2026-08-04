@@ -1,6 +1,3 @@
-using System.Net;
-using System.Text;
-using System.Text.Json;
 using Api.Models;
 using Docker.DotNet;
 using Docker.DotNet.Models;
@@ -11,13 +8,13 @@ namespace Tests;
 
 public sealed class EndToEndDeployTests : IClassFixture<EndToEndFixture>
 {
-    readonly HttpClient client;
+    readonly ApiClient apiClient;
     readonly IDockerClient dockerClient;
 
     public EndToEndDeployTests(EndToEndFixture fixture)
     {
         ArgumentNullException.ThrowIfNull(fixture);
-        client = fixture.HttpClient;
+        apiClient = new ApiClient(fixture.HttpClient);
         dockerClient = fixture.DockerClient;
     }
 
@@ -27,17 +24,14 @@ public sealed class EndToEndDeployTests : IClassFixture<EndToEndFixture>
         var containerName = "deployer-test-latest";
         await StopAndRemoveContainer(containerName);
 
-        var body = new DeployRequest
+        var response = await apiClient.Deploy(new DeployRequest
         {
             Project = "test-project",
             Environment = "dev",
             Tag = "latest",
-        };
-        using var content = new StringContent(
-            JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync(new Uri("/", UriKind.Relative), content);
+        });
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
         var containers = await GetContainers();
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{containerName}"));
@@ -55,17 +49,14 @@ public sealed class EndToEndDeployTests : IClassFixture<EndToEndFixture>
         var containerName = "deployer-test-21ec91a";
         await StopAndRemoveContainer(containerName);
 
-        var body = new DeployRequest
+        var response = await apiClient.Deploy(new DeployRequest
         {
             Project = "test-project",
             Environment = "dev",
             Tag = "21ec91a",
-        };
-        using var content = new StringContent(
-            JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync(new Uri("/", UriKind.Relative), content);
+        });
 
-        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
         var containers = await GetContainers();
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{containerName}"));
