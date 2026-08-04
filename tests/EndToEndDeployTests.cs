@@ -8,13 +8,13 @@ namespace Tests;
 
 public sealed class EndToEndDeployTests : IClassFixture<EndToEndFixture>
 {
-    readonly ApiClient apiClient;
+    readonly ApiClient.ApiClient apiClient;
     readonly IDockerClient dockerClient;
 
     public EndToEndDeployTests(EndToEndFixture fixture)
     {
         ArgumentNullException.ThrowIfNull(fixture);
-        apiClient = new ApiClient(fixture.HttpClient);
+        apiClient = new ApiClient.ApiClient(fixture.HttpClient);
         dockerClient = fixture.DockerClient;
     }
 
@@ -22,7 +22,7 @@ public sealed class EndToEndDeployTests : IClassFixture<EndToEndFixture>
     public async Task ValidRequest_BuiltImage_Returns200()
     {
         var containerName = "deployer-test-latest";
-        await StopAndRemoveContainer(containerName);
+        await TestHelpers.StopAndRemoveContainer(dockerClient, containerName);
 
         var response = await apiClient.Deploy(new DeployRequest
         {
@@ -33,21 +33,21 @@ public sealed class EndToEndDeployTests : IClassFixture<EndToEndFixture>
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
-        var containers = await GetContainers();
+        var containers = await TestHelpers.GetContainers(dockerClient);
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{containerName}"));
         container.Should().NotBeNull();
 
-        var inspect = await dockerClient.Containers.InspectContainerAsync(container.ID);
+        var inspect = await dockerClient.Containers.InspectContainerAsync(container.ID, TestContext.Current.CancellationToken);
         inspect.Config.Env.Should().Contain("COMMON=COMMON_VALUE");
 
-        await StopAndRemoveContainer(containerName);
+        await TestHelpers.StopAndRemoveContainer(dockerClient, containerName);
     }
 
     [Fact]
     public async Task ValidRequest_CommitTag_BuiltImage_Returns200()
     {
         var containerName = "deployer-test-21ec91a";
-        await StopAndRemoveContainer(containerName);
+        await TestHelpers.StopAndRemoveContainer(dockerClient, containerName);
 
         var response = await apiClient.Deploy(new DeployRequest
         {
@@ -58,12 +58,12 @@ public sealed class EndToEndDeployTests : IClassFixture<EndToEndFixture>
 
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
-        var containers = await GetContainers();
+        var containers = await TestHelpers.GetContainers(dockerClient);
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{containerName}"));
         container.Should().NotBeNull();
 
         container.Image.Should().Be("ghcr.io/michaeltg17/deployer:21ec91a");
 
-        await StopAndRemoveContainer(containerName);
-    }
+await TestHelpers.StopAndRemoveContainer(dockerClient, containerName);
+}
 }

@@ -1,6 +1,6 @@
 namespace Api.Models;
 
-internal sealed class DeployerSettings
+public sealed class DeployerSettings
 {
     public required string KeePassDbPath { get; set; } = "deployer.kdbx";
 

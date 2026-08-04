@@ -8,7 +8,7 @@ namespace Tests;
 
 public sealed class DeployTests : IClassFixture<TestFixture>
 {
-    readonly ApiClient apiClient;
+    readonly ApiClient.ApiClient apiClient;
     readonly HttpClient client;
     readonly IDockerClient dockerClient;
 
@@ -16,7 +16,7 @@ public sealed class DeployTests : IClassFixture<TestFixture>
     {
         ArgumentNullException.ThrowIfNull(fixture);
         client = fixture.CreateClient();
-        apiClient = new ApiClient(client);
+        apiClient = new ApiClient.ApiClient(client);
         dockerClient = fixture.DockerClient;
     }
 

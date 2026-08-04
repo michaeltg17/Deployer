@@ -1,6 +1,6 @@
 namespace Api.Models;
 
-internal sealed class DeployRequest
+public sealed class DeployRequest
 {
     public string? Project { get; set; }
     public string? Environment { get; set; }

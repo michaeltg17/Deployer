@@ -1,16 +1,13 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace Tests
 {
-    internal class TestHelpers
+    internal static class TestHelpers
     {
-        async Task StopAndRemoveContainer(string name)
+        public static async Task StopAndRemoveContainer(IDockerClient dockerClient, string name)
         {
-            var containers = await GetContainers();
+            var containers = await GetContainers(dockerClient);
             var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{name}"));
             if (container == null)
                 return;
@@ -19,9 +16,9 @@ namespace Tests
             await dockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true });
         }
 
-        Task<IList<ContainerListResponse>> GetContainers()
+        public static async Task<IList<ContainerListResponse>> GetContainers(IDockerClient dockerClient)
         {
-            return dockerClient.Containers.ListContainersAsync(new ContainersListParameters { All = true });
+            return await dockerClient.Containers.ListContainersAsync(new ContainersListParameters { All = true });
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace Api.Services;
 
-internal sealed class ProcessRunner : IProcessRunner
+public sealed class ProcessRunner : IProcessRunner
 {
     public async Task<ProcessResult> Run(
         string fileName,

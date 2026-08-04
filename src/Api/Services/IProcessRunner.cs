@@ -2,7 +2,7 @@ using Api.Models;
 
 namespace Api.Services;
 
-internal interface IProcessRunner
+public interface IProcessRunner
 {
     Task<ProcessResult> Run(
         string fileName,
