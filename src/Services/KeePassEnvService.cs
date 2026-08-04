@@ -17,11 +17,11 @@ internal sealed class KeePassEnvService(
     {
         var vars = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        var common = await ExtractAttachment(project, ".env").ConfigureAwait(false);
+        var common = await ExtractAttachment(project, ".env");
         if (!string.IsNullOrEmpty(common))
             ParseEnvContent(common, vars);
 
-        var envSpecific = await ExtractAttachment(project, $".env.{environment}").ConfigureAwait(false);
+        var envSpecific = await ExtractAttachment(project, $".env.{environment}");
         if (!string.IsNullOrEmpty(envSpecific))
             ParseEnvContent(envSpecific, vars);
 
@@ -52,7 +52,7 @@ internal sealed class KeePassEnvService(
     private async Task<string> ExtractAttachment(string project, string attachmentName)
     {
         var arguments = $"attachment-export --stdout \"{dbPath}\" \"{projectsGroup}/{project}\" \"{attachmentName}\"";
-        var result = await processRunner.Run("keepassxc-cli", arguments, 30_000, stdinInput: $"{password}\n").ConfigureAwait(false);
+        var result = await processRunner.Run("keepassxc-cli", arguments, 30_000, stdinInput: $"{password}\n");
 
         if (result.ExitCode != 0)
         {

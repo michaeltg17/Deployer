@@ -57,7 +57,7 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
     private async Task CleanupTestContainers()
     {
         var containers = await dockerClient.Containers.ListContainersAsync(
-            new ContainersListParameters { All = true }).ConfigureAwait(false);
+            new ContainersListParameters { All = true });
         var testContainers = containers
             .Where(c => c.Names.Any(n => n.StartsWith("/deployer-test-", StringComparison.Ordinal)))
             .ToList();
@@ -67,17 +67,17 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
             if (container.State == "running")
             {
                 await dockerClient.Containers.StopContainerAsync(container.ID,
-                    new ContainerStopParameters()).ConfigureAwait(false);
+                    new ContainerStopParameters());
             }
             await dockerClient.Containers.RemoveContainerAsync(container.ID,
-                new ContainerRemoveParameters { Force = true }).ConfigureAwait(false);
+                new ContainerRemoveParameters { Force = true });
         }
     }
 
     public async override ValueTask DisposeAsync()
     {
-        await CleanupTestContainers().ConfigureAwait(false);
+        await CleanupTestContainers();
         dockerClient.Dispose();
-        await base.DisposeAsync().ConfigureAwait(false);
+        await base.DisposeAsync();
     }
 }

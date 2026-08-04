@@ -24,39 +24,53 @@ public sealed class DeployTests : IClassFixture<TestFixture>
     [Fact]
     public async Task MissingBody_Returns400()
     {
+        //When
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), null, TestContext.Current.CancellationToken);
 
+        //Then
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task InvalidBody_Returns400()
     {
+        //Given
         using var content = new StringContent("not-json", Encoding.UTF8, "application/json");
+
+        //When
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
 
+        //Then
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task MissingEnvironment_Returns400()
     {
+        //Given
         var body = new DeployRequest { Project = "test", Tag = "v1.0.0" };
         using var content = new StringContent(
             JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+
+        //When
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
 
+        //Then
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task MissingTag_Returns400()
     {
+        //Given
         var body = new DeployRequest { Project = "test", Environment = "dev" };
         using var content = new StringContent(
             JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
+
+        //When
         var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
 
+        //Then
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
@@ -113,7 +127,7 @@ public sealed class DeployTests : IClassFixture<TestFixture>
     async Task DeployAndVerify(string project, string environment, string tag, string expectedImage)
     {
         var containerName = $"deployer-test-{tag}";
-        await StopAndRemoveContainer(containerName).ConfigureAwait(false);
+        await StopAndRemoveContainer(containerName);
 
         var body = new DeployRequest
         {
@@ -123,35 +137,33 @@ public sealed class DeployTests : IClassFixture<TestFixture>
         };
         using var content = new StringContent(
             JsonSerializer.Serialize(body), Encoding.UTF8, "application/json");
-        var response = await client.PostAsync(new Uri("/", UriKind.Relative), content).ConfigureAwait(false);
+        var response = await client.PostAsync(new Uri("/", UriKind.Relative), content);
 
-        var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+        var responseBody = await response.Content.ReadAsStringAsync();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
 
         var containers = await dockerClient.Containers.ListContainersAsync(
-            new ContainersListParameters { All = true }).ConfigureAwait(false);
+            new ContainersListParameters { All = true });
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{containerName}"));
         container.Should().NotBeNull();
         container.Image.Should().Be(expectedImage);
 
-        var inspect = await dockerClient.Containers.InspectContainerAsync(container.ID).ConfigureAwait(false);
+        var inspect = await dockerClient.Containers.InspectContainerAsync(container.ID);
         inspect.Config.Env.Should().NotBeNull();
         inspect.Config.Env.Should().Contain("COMMON=COMMON_VALUE");
         inspect.Config.Env.Should().Contain("SECRET=SECRET_DEV");
-        await StopAndRemoveContainer(containerName).ConfigureAwait(false);
+        await StopAndRemoveContainer(containerName);
     }
 
     async Task StopAndRemoveContainer(string name)
     {
         var containers = await dockerClient.Containers.ListContainersAsync(
-            new ContainersListParameters { All = true }).ConfigureAwait(false);
+            new ContainersListParameters { All = true });
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{name}"));
         if (container == null)
             return;
 
-        await dockerClient.Containers.StopContainerAsync(container.ID, new ContainerStopParameters())
-            .ConfigureAwait(false);
-        await dockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true })
-            .ConfigureAwait(false);
+        await dockerClient.Containers.StopContainerAsync(container.ID, new ContainerStopParameters());
+        await dockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true });
     }
 }

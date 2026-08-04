@@ -29,12 +29,12 @@ internal sealed class DeploymentService(
         logger.LogDeploying(request.Project!, request.Environment!);
 
         logger.LogExtractingEnv(request.Project!, request.Environment!);
-        var envVars = await keepassEnvService.ExtractEnvVariables(request.Project!, request.Environment!).ConfigureAwait(false);
+        var envVars = await keepassEnvService.ExtractEnvVariables(request.Project!, request.Environment!);
         envVars["TAG"] = request.Tag!;
 
         var composeArgs = BuildComposeArgs(projectDir, request.Environment!);
         logger.LogRunningCompose(composeArgs);
-        var composeResult = await processRunner.Run("docker", composeArgs, 300_000, projectDir, envVars).ConfigureAwait(false);
+        var composeResult = await processRunner.Run("docker", composeArgs, 300_000, projectDir, envVars);
         if (composeResult.ExitCode != 0)
         {
             logger.LogComposeFailed(composeResult.Stderr);

@@ -12,7 +12,7 @@ internal static class DeployEndpoint
             [FromBody] DeployRequest request,
             [FromServices] DeploymentService deployService) =>
         {
-            await deployService.Deploy(request).ConfigureAwait(false);
+            await deployService.Deploy(request);
             return Results.Ok();
         });
     }

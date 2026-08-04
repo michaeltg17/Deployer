@@ -42,11 +42,11 @@ internal sealed class ProcessRunner : IProcessRunner
 
         if (stdinInput != null)
         {
-            await process.StandardInput.WriteAsync(stdinInput.AsMemory(), cancellationToken).ConfigureAwait(false);
-            await process.StandardInput.FlushAsync(cancellationToken).ConfigureAwait(false);
+            await process.StandardInput.WriteAsync(stdinInput.AsMemory(), cancellationToken);
+            await process.StandardInput.FlushAsync(cancellationToken);
         }
 
-        await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+        await process.WaitForExitAsync(cancellationToken);
 
         return new ProcessResult
         {

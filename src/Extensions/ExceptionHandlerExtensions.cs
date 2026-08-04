@@ -27,7 +27,7 @@ internal static class ExceptionHandlerExtensions
 
             var problemDetailsContext = BuildProblemDetailsContext(exception, httpContext, env);
 
-            await problemDetailsService.WriteAsync(problemDetailsContext).ConfigureAwait(false);
+            await problemDetailsService.WriteAsync(problemDetailsContext);
         }));
 
         return app;
