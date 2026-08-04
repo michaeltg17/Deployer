@@ -1,10 +1,9 @@
 using Api.Exceptions;
-using Api.Logging;
 using Api.Models;
 
 namespace Api.Services;
 
-internal sealed class KeePassEnvService(
+internal sealed partial class KeePassEnvService(
     ILogger<KeePassEnvService> logger,
     IDeployerSettings settings,
     IProcessRunner processRunner)
@@ -23,7 +22,7 @@ internal sealed class KeePassEnvService(
         if (!string.IsNullOrEmpty(envSpecific))
             ParseEnvContent(envSpecific, vars);
 
-        logger.LogEnvExtracted(project, environment, vars.Count);
+        LogEnvExtracted(project, environment, vars.Count);
 
         return settings.ThrowIfNoSecrets && vars.Count == 0
             ? throw new NoSecretsFoundException(project, environment)
@@ -57,10 +56,16 @@ internal sealed class KeePassEnvService(
 
         if (result.ExitCode != 0)
         {
-            logger.LogKeePassCliFailed(result.ExitCode, projectsGroup, project, attachmentName, result.Stderr);
+            LogKeePassCliFailed(result.ExitCode, projectsGroup, project, attachmentName, result.Stderr);
             return string.Empty;
         }
 
         return result.Stdout;
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Extracted {count} environment variables for {project}/{environment}.")]
+    partial void LogEnvExtracted(string project, string environment, int count);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "keepassxc-cli exit={exitCode} for {group}/{entry}/{attachment}: {stderr}.")]
+    partial void LogKeePassCliFailed(int exitCode, string group, string entry, string attachment, string stderr);
 }
