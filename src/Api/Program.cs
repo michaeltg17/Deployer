@@ -26,6 +26,6 @@ var app = builder.Build();
 
 app.UseCustomExceptionHandler();
 DeployEndpoint.Map(app);
-TestEndpoints.Map(app);
+TestEndpoints.Map(app.MapGroup("/test"));
 
 app.Run();

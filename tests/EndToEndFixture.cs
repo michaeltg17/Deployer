@@ -101,9 +101,12 @@ public sealed class EndToEndFixture : IAsyncLifetime
 
         var inspect = await DockerClient.Containers.InspectContainerAsync(ContainerId);
         var containerIp = inspect.NetworkSettings.IPAddress;
+        var uri = !string.IsNullOrEmpty(containerIp)
+            ? $"http://{containerIp}:8080"
+            : $"http://localhost:{inspect.NetworkSettings.Ports["8080/tcp"]![0].HostPort}";
         HttpClient = new HttpClient
         {
-            BaseAddress = new Uri($"http://{containerIp}:8080"),
+            BaseAddress = new Uri(uri),
         };
         HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
@@ -114,7 +117,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
         {
             try
             {
-                var response = await HttpClient.GetAsync("/GetOk");
+                var response = await HttpClient.GetAsync("/Test/GetOk");
                 if (response.IsSuccessStatusCode)
                     return;
             }
