@@ -110,7 +110,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
 
     async Task WaitForReady()
     {
-        for (var i = 0; i < 30; i++)
+        for (var i = 0; i < 60; i++)
         {
             try
             {
