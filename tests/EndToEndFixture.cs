@@ -72,7 +72,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
     async Task BuildImage(string repoRoot)
     {
         var processRunner = new ProcessRunner();
-        var result = await processRunner.Run("docker", $"build -f Dockerfile -t {ImageName} .", 300_000, repoRoot);
+        var result = await processRunner.Run("docker", $"build --no-cache -f Dockerfile -t {ImageName} .", 300_000, repoRoot);
         result.ExitCode.Should().Be(0, $"Build failed:\n{result.Stdout}\n{result.Stderr}");
     }
 

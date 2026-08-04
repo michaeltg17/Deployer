@@ -10,7 +10,7 @@ public sealed class ProcessRunner : IProcessRunner
         string arguments,
         int timeoutMs,
         string? workingDirectory = null,
-        Dictionary<string, string>? processEnv = null,
+        Dictionary<string, string>? environmentVariables = null,
         string? stdinInput = null,
         CancellationToken cancellationToken = default)
     {
@@ -28,9 +28,9 @@ public sealed class ProcessRunner : IProcessRunner
         if (workingDirectory != null)
             psi.WorkingDirectory = workingDirectory;
 
-        if (processEnv != null)
+        if (environmentVariables != null)
         {
-            foreach (var (key, value) in processEnv)
+            foreach (var (key, value) in environmentVariables)
                 psi.EnvironmentVariables[key] = value;
         }
 

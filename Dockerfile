@@ -6,14 +6,15 @@ WORKDIR /src
 COPY Directory.Build.props ./
 COPY Directory.Packages.props ./
 COPY Deployer.slnx ./
-COPY src/Api.csproj src/
+COPY src/Api/Api.csproj src/Api/
+COPY src/ApiClient/ApiClient.csproj src/ApiClient/
 COPY tests/Tests.csproj tests/
 RUN dotnet restore Deployer.slnx
 
 # Layer 2: Copy full source and publish (invalidated on code change)
 COPY src/ src/
 COPY tests/ tests/
-RUN dotnet publish src/Api.csproj -c Release -o /app
+RUN dotnet publish src/Api/Api.csproj -c Release -o /app
 
 # Stage 2: Runtime (alpine + docker-cli + keepassxc-cli for deployments)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
