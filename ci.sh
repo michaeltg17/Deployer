@@ -5,15 +5,6 @@ echo "========================================="
 echo "  Running ci"
 echo "========================================="
 
-# Install keepassxc-cli for tests if not already installed
-if ! command -v keepassxc-cli &>/dev/null; then
-    echo ""
-    echo "[0/3] Installing keepassxc-cli..."
-    sudo apt-get update -qq
-    sudo apt-get install -y -qq keepassxc >/dev/null 2>&1 || sudo apt-get install -y keepassxc
-    echo "keepassxc-cli installed: $(which keepassxc-cli)"
-fi
-
 # Step 1: Restore
 echo ""
 echo "[1/3] Restoring packages..."
