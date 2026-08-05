@@ -10,7 +10,7 @@ internal sealed partial class KeePassEnvService(
 {
     private readonly string projectsGroup = "projects";
 
-    public async Task<Dictionary<string, string>> ExtractEnvVariables(string project, string environment)
+    internal async Task<Dictionary<string, string>> ExtractEnvVariables(string project, string environment)
     {
         var vars = new Dictionary<string, string>(StringComparer.Ordinal);
 

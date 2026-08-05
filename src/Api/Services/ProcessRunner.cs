@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 namespace Api.Services;
 
-public sealed class ProcessRunner
+internal sealed class ProcessRunner
 {
-    public async Task<ProcessResult> Run(
+    internal async Task<ProcessResult> Run(
         string fileName,
         string arguments,
         string? workingDirectory = null,
