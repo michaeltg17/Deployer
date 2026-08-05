@@ -4,7 +4,7 @@ using Xunit;
 
 namespace IntegrationTests
 {
-    [Collection(nameof(TestCollection))]
+    [Collection(nameof(TestCollectionFixture))]
     public abstract class Test : IAsyncLifetime
     {
         public ApiClient.ApiClient ApiClient { get; private set; } = default!;
