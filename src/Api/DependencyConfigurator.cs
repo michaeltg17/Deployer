@@ -7,6 +7,7 @@ using Microsoft.Extensions.Options;
 using Serilog;
 using System.Linq.Expressions;
 using System.Reflection;
+using Api.Extensions;
 
 namespace Api
 {

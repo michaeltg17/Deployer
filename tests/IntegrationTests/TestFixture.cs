@@ -2,10 +2,13 @@ using Api.Models;
 using Api.Services;
 using Docker.DotNet;
 using Docker.DotNet.Models;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Serilog;
+using Serilog.Sinks.XUnit.Injectable;
 
 namespace IntegrationTests;
 
@@ -17,6 +20,8 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
 
     public IDockerClient DockerClient => dockerClient;
 
+    public InjectableTestOutputSink InjectableTestOutputSink { get; set; } = new();
+
     public TestFixture()
     {
         var testRoot = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(TestFixture).Assembly.Location)!, "..", "..", ".."));
@@ -27,6 +32,17 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
         dockerClient = config.CreateClient();
         config.Dispose();
         CleanupTestContainers().Wait();
+    }
+
+    protected override IHost CreateHost(IHostBuilder builder)
+    {
+        builder.UseSerilog((context, services, configuration) =>
+        {
+            Api.DependencyConfigurator.ApplyCommonSerilogConfiguration(context, services, configuration);
+            configuration.WriteTo.Sink(InjectableTestOutputSink);
+        });
+
+        return base.CreateHost(builder);
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
