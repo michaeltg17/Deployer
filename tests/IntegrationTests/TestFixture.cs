@@ -79,14 +79,6 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
                 { nameof(DeployerSettings.ThrowIfNoSecrets), "false" },
             });
         });
-
-        builder.ConfigureServices(services =>
-        {
-            var existing = services.FirstOrDefault(d => d.ServiceType == typeof(IProcessRunner));
-            if (existing != null)
-                services.Remove(existing);
-            services.AddSingleton<IProcessRunner>(sp => new ProcessRunner());
-        });
     }
 
     private async Task CleanupTestContainers()

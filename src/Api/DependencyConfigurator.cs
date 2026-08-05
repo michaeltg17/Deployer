@@ -30,7 +30,7 @@ namespace Api
         public static IServiceCollection AddAppDependencies(this IServiceCollection services)
         {
             return services
-                .AddSingleton<IProcessRunner, ProcessRunner>()
+                .AddSingleton<ProcessRunner>()
                 .AddSingleton<KeePassEnvService>()
                 .AddSingleton<DeploymentService>();
         }

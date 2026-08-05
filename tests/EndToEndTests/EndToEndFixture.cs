@@ -71,7 +71,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
     async Task BuildImage(string repoRoot)
     {
         var processRunner = new ProcessRunner();
-        var result = await processRunner.Run("docker", $"build --no-cache -f Dockerfile -t {ImageName} .", 300_000, repoRoot);
+        var result = await processRunner.Run("docker", $"build --no-cache -f Dockerfile -t {ImageName} .", repoRoot);
         result.ExitCode.Should().Be(0, $"Build failed:\n{result.Stdout}\n{result.Stderr}");
     }
 
@@ -93,7 +93,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
         });
 
         var args = $"run -d --name deployer-e2e --privileged -p 0:8080 {mounts} {envVar} {ImageName}";
-        var result = await processRunner.Run("docker", args, 30_000);
+        var result = await processRunner.Run("docker", args);
         result.ExitCode.Should().Be(0, $"Container start failed:\n{result.Stdout}\n{result.Stderr}");
         ContainerId = result.Stdout.TrimEnd('\r', '\n');
 

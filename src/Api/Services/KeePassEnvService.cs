@@ -6,7 +6,7 @@ namespace Api.Services;
 internal sealed partial class KeePassEnvService(
     ILogger<KeePassEnvService> logger,
     IDeployerSettings settings,
-    IProcessRunner processRunner)
+    ProcessRunner processRunner)
 {
     private readonly string projectsGroup = "projects";
 
@@ -52,7 +52,7 @@ internal sealed partial class KeePassEnvService(
     private async Task<string> ExtractAttachment(string project, string attachmentName)
     {
         var arguments = $"attachment-export --stdout \"{settings.KeePassDbPath}\" \"{projectsGroup}/{project}\" \"{attachmentName}\"";
-        var result = await processRunner.Run("keepassxc-cli", arguments, 30_000, stdinInput: $"{settings.KeePassDbPassword}\n");
+        var result = await processRunner.Run("keepassxc-cli", arguments, stdinInput: $"{settings.KeePassDbPassword}\n");
 
         if (result.ExitCode != 0)
         {

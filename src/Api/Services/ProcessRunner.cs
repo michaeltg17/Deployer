@@ -3,12 +3,11 @@ using System.Diagnostics;
 
 namespace Api.Services;
 
-public sealed class ProcessRunner : IProcessRunner
+public sealed class ProcessRunner
 {
     public async Task<ProcessResult> Run(
         string fileName,
         string arguments,
-        int timeoutMs,
         string? workingDirectory = null,
         Dictionary<string, string>? environmentVariables = null,
         string? stdinInput = null,

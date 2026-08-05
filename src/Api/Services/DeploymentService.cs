@@ -7,7 +7,8 @@ namespace Api.Services;
 internal sealed partial class DeploymentService(
     ILogger<DeploymentService> logger,
     IDeployerSettings settings,
-    KeePassEnvService keepassEnvService, IProcessRunner processRunner)
+    KeePassEnvService keepassEnvService,
+    ProcessRunner processRunner)
 {
     public async Task Deploy(DeployRequest request)
     {
@@ -30,7 +31,7 @@ internal sealed partial class DeploymentService(
 
         var composeArgs = BuildComposeArgs(projectDir, request.Environment!);
         LogRunningCompose(composeArgs);
-        var composeResult = await processRunner.Run("docker", composeArgs, 300_000, projectDir, envVars);
+        var composeResult = await processRunner.Run("docker", composeArgs, projectDir, envVars);
         if (composeResult.ExitCode != 0)
         {
             LogComposeFailed(composeResult.Stderr);
