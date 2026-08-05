@@ -3,12 +3,14 @@ using Api.Services;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Sinks.XUnit.Injectable;
+using Serilog.Sinks.XUnit.Injectable.Abstract;
 
 namespace IntegrationTests;
 
@@ -21,6 +23,15 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
     public IDockerClient DockerClient => dockerClient;
 
     public InjectableTestOutputSink InjectableTestOutputSink { get; set; } = new();
+
+    /// <summary>
+    /// To be called at the end of each test so that logs from previous test doesn't get mixed with the next one.
+    /// </summary>
+    public static void FlushLogger()
+    {
+        //Not the best but too hard to do it in another way.
+        Thread.Sleep(10);
+    }
 
     public TestFixture()
     {
@@ -40,6 +51,14 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
         {
             Api.DependencyConfigurator.ApplyCommonSerilogConfiguration(context, services, configuration);
             configuration.WriteTo.Sink(InjectableTestOutputSink);
+        });
+
+        builder.ConfigureServices(services =>
+        {
+            services.AddHttpLogging(options =>
+                options.LoggingFields = HttpLoggingFields.RequestBody | HttpLoggingFields.ResponseBody);
+            services.AddTransient<IStartupFilter, TestStartupFilter>();
+            services.AddSingleton<IInjectableTestOutputSink>(InjectableTestOutputSink);
         });
 
         return base.CreateHost(builder);

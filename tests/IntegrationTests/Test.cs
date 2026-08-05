@@ -1,9 +1,11 @@
 ﻿using Docker.DotNet;
+using Serilog;
 using Xunit;
 
 namespace IntegrationTests
 {
-    public abstract class Test : IClassFixture<TestFixture>
+    [Collection(nameof(TestCollection))]
+    public abstract class Test : IAsyncLifetime
     {
         public ApiClient.ApiClient ApiClient { get; private set; } = default!;
         internal TestFixture TestFixture { get; set; } = default!;
@@ -15,9 +17,19 @@ namespace IntegrationTests
             DockerClient = config.CreateClient();
         }
 
+        public async ValueTask DisposeAsync()
+        {
+            TestFixture.FlushLogger();
+        }
+
         public virtual ValueTask Initialize()
         {
             ApiClient = new(TestFixture.CreateClient());
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask InitializeAsync()
+        {
             return ValueTask.CompletedTask;
         }
     }
