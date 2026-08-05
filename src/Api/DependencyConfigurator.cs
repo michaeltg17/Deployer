@@ -30,9 +30,10 @@ namespace Api
         public static IServiceCollection AddAppDependencies(this IServiceCollection services)
         {
             return services
-                .AddSingleton<ProcessRunner>()
-                .AddSingleton<KeePassEnvService>()
-                .AddSingleton<DeploymentService>();
+                .AddScoped<ProcessRunner>()
+                .AddScoped<KeePassEnvService>()
+                .AddScoped<DeploymentService>()
+                .AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
         }
 
         public static IServiceCollection AddSettings(this IServiceCollection services)

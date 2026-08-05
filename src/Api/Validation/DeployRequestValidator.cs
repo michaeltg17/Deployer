@@ -1,30 +1,24 @@
-using Api.Exceptions;
 using Api.Models;
+using FluentValidation;
 
 namespace Api.Validation;
 
-internal static class DeployRequestValidator
+public sealed class DeployRequestValidator : AbstractValidator<DeployRequest>
 {
-    public static InvalidDeployRequestException? Validate(DeployRequest request)
+    public DeployRequestValidator(IDeployerSettings settings)
     {
-        if (request is null)
-            return null;
+        RuleFor(x => x.Project)
+            .NotEmpty()
+            .Must((request, project) => ComposeFileExists(project, settings))
+                .WithMessage((request, project) => $"Docker compose file not found for project '{project}': docker-compose.yml");
 
-        var invalidFields = new List<string>();
-
-        if (string.IsNullOrWhiteSpace(request.Project))
-            invalidFields.Add($"project={ToJsonValue(request.Project)}");
-        if (string.IsNullOrWhiteSpace(request.Environment))
-            invalidFields.Add($"environment={ToJsonValue(request.Environment)}");
-        if (string.IsNullOrWhiteSpace(request.Tag))
-            invalidFields.Add($"tag={ToJsonValue(request.Tag)}");
-
-        if (invalidFields.Count == 0) return null;
-
-        var message = $"Invalid deploy request: {string.Join(", ", invalidFields)}";
-        return new InvalidDeployRequestException(message);
+        RuleFor(x => x.Environment).NotEmpty();
+        RuleFor(x => x.Tag).NotEmpty();
     }
 
-    private static string ToJsonValue(string? value) =>
-        value == null ? "null" : $"'{value}'";
+    static bool ComposeFileExists(string? project, IDeployerSettings settings)
+    {
+        var projectDir = Path.Combine(settings.ProjectsDir, project!);
+        return File.Exists(Path.Combine(projectDir, "docker-compose.yml"));
+    }
 }

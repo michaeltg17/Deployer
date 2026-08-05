@@ -44,7 +44,6 @@
 │   │   │   └── TestEndpoints.cs        # /test/* test endpoints (GetOk, Post, ThrowInternalServerError)
 │   │   ├── Exceptions/
 │   │   │   ├── DeployerException.cs    # base exception
-│   │   │   ├── InvalidDeployRequestException.cs
 │   │   │   └── NoSecretsFoundException.cs
 │   │   ├── Extensions/
 │   │   │   ├── ExceptionHandlerExtensions.cs  # problem+json error handler, traceId, exception detail

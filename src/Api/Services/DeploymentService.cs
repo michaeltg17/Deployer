@@ -1,6 +1,6 @@
 using Api.Exceptions;
 using Api.Models;
-using Api.Validation;
+using FluentValidation;
 
 namespace Api.Services;
 
@@ -8,20 +8,14 @@ internal sealed partial class DeploymentService(
     ILogger<DeploymentService> logger,
     IDeployerSettings settings,
     KeePassEnvService keepassEnvService,
-    ProcessRunner processRunner)
+    ProcessRunner processRunner,
+    IValidator<DeployRequest> validator)
 {
     public async Task Deploy(DeployRequest request)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
-        if (DeployRequestValidator.Validate(request) is { } validationEx)
-            throw validationEx;
+        await validator.ValidateAndThrowAsync(request);
 
         var projectDir = Path.Combine(settings.ProjectsDir, request.Project!);
-        var baseComposeFile = Path.Combine(projectDir, "docker-compose.yml");
-
-        if (!File.Exists(baseComposeFile))
-            throw new InvalidDeployRequestException($"Docker compose file not found for project '{request.Project}': {baseComposeFile}");
 
         LogDeploying(request.Project!, request.Environment!);
 

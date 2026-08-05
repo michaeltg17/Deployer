@@ -4,8 +4,6 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text.Json;
-using Api.Exceptions;
-
 namespace Api.Extensions
 {
     internal static class ExceptionHandlerExtensions
@@ -24,7 +22,6 @@ namespace Api.Extensions
                 {
                     BadHttpRequestException => (int)HttpStatusCode.BadRequest,
                     ValidationException => (int)HttpStatusCode.BadRequest,
-                    InvalidDeployRequestException => (int)HttpStatusCode.BadRequest,
                     _ => (int)HttpStatusCode.InternalServerError,
                 };
 
