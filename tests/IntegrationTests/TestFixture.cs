@@ -35,9 +35,9 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
 
     public TestFixture()
     {
-        var testRoot = Path.GetFullPath(Path.Combine(Path.GetDirectoryName(typeof(TestFixture).Assembly.Location)!, "..", "..", ".."));
-        testKdbxPath = Path.Combine(testRoot, "test.kdbx");
-        TestProjectsDir = Path.Combine(testRoot, "Sandbox/projects");
+        var outputDir = Path.GetDirectoryName(typeof(TestFixture).Assembly.Location)!;
+        testKdbxPath = Path.Combine(outputDir, "Sandbox", "secrets.kdbx");
+        TestProjectsDir = Path.Combine(outputDir, "Sandbox", "projects");
 
         var config = new DockerClientConfiguration();
         dockerClient = config.CreateClient();
