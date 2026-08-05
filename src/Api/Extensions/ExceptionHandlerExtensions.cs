@@ -7,7 +7,7 @@ namespace Api.Extensions;
 
 internal static class ExceptionHandlerExtensions
 {
-    public static WebApplication UseCustomExceptionHandler(this WebApplication app)
+    public static WebApplication UseExceptionHandler(this WebApplication app)
     {
         app.UseExceptionHandler(static config => config.Run(static async httpContext =>
         {
