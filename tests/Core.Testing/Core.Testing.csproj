@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<PackageReference Include="AwesomeAssertions" />
+	</ItemGroup>
+  <ItemGroup>
+    <Content Include="Sandbox\projects\no-secrets\docker-compose.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Sandbox\projects\test-project\docker-compose.dev.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Sandbox\projects\test-project\docker-compose.yml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Sandbox\secrets.kdbx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\ApiClient\ApiClient.csproj" />
+    <ProjectReference Include="..\..\src\Api\Api.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,10 +1,11 @@
 using Api.Models;
 using Docker.DotNet;
-
+using IntegrationTests;
+using Tests.Fixtures;
 using Xunit;
 using static AwesomeAssertions.AssertionExtensions;
 
-namespace Tests;
+namespace IntegrationTests.Tests;
 
 public sealed class EndToEndDeployTests : IClassFixture<EndToEndFixture>
 {

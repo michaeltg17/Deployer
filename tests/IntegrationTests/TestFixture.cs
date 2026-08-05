@@ -7,8 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Tests;
-
+namespace IntegrationTests;
 
 public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposable
 {

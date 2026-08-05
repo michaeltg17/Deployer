@@ -1,7 +1,7 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
 
-namespace Tests
+namespace IntegrationTests
 {
     internal static class TestHelpers
     {

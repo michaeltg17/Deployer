@@ -5,7 +5,7 @@ using Docker.DotNet.Models;
 using Xunit;
 using static AwesomeAssertions.AssertionExtensions;
 
-namespace Tests;
+namespace EndToEndTests;
 
 public sealed class EndToEndFixture : IAsyncLifetime
 {

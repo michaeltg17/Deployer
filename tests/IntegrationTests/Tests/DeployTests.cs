@@ -4,7 +4,7 @@ using Docker.DotNet.Models;
 using Xunit;
 using static AwesomeAssertions.AssertionExtensions;
 
-namespace Tests;
+namespace IntegrationTests.Tests;
 
 public sealed class DeployTests : IClassFixture<TestFixture>
 {
