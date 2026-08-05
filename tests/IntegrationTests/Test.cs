@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using Docker.DotNet;
+using Xunit;
 
 namespace IntegrationTests
 {
@@ -6,6 +7,13 @@ namespace IntegrationTests
     {
         public ApiClient.ApiClient ApiClient { get; private set; } = default!;
         internal TestFixture TestFixture { get; set; } = default!;
+        internal IDockerClient DockerClient { get; set; } = default!;
+
+        public Test()
+        {
+            var config = new DockerClientConfiguration();
+            DockerClient = config.CreateClient();
+        }
 
         public virtual ValueTask Initialize()
         {

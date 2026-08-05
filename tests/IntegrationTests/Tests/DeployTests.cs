@@ -1,58 +1,37 @@
 using Api.Models;
-using Docker.DotNet;
 using Docker.DotNet.Models;
 using Xunit;
 using static AwesomeAssertions.AssertionExtensions;
 
 namespace IntegrationTests.Tests;
 
-public sealed class DeployTests : IClassFixture<TestFixture>
+public sealed class DeployTests : Test
 {
-    readonly ApiClient.ApiClient apiClient;
-    readonly HttpClient client;
-    readonly IDockerClient dockerClient;
-
-    public DeployTests(TestFixture fixture)
-    {
-        ArgumentNullException.ThrowIfNull(fixture);
-        client = fixture.CreateClient();
-        apiClient = new ApiClient.ApiClient(client);
-        dockerClient = fixture.DockerClient;
-    }
-
     [Fact]
-    public async Task MissingBody_Returns400()
+    public async Task MissingProject_Returns400()
     {
-        var response = await client.PostAsync(new Uri("/", UriKind.Relative), null, TestContext.Current.CancellationToken);
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task InvalidBody_Returns400()
-    {
-        using var content = new StringContent("not-json", System.Text.Encoding.UTF8, "application/json");
-        var response = await client.PostAsync(new Uri("/", UriKind.Relative), content, TestContext.Current.CancellationToken);
+        var response = await ApiClient.Deploy(new DeployRequest { Environment = "dev", Tag = "v1.0.0" });
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task MissingEnvironment_Returns400()
     {
-        var response = await apiClient.Deploy(new DeployRequest { Project = "test", Tag = "v1.0.0" });
+        var response = await ApiClient.Deploy(new DeployRequest { Project = "test", Tag = "v1.0.0" });
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task MissingTag_Returns400()
     {
-        var response = await apiClient.Deploy(new DeployRequest { Project = "test", Environment = "dev" });
+        var response = await ApiClient.Deploy(new DeployRequest { Project = "test", Environment = "dev" });
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
     [Fact]
     public async Task ValidRequest_NoComposeFile_Returns400()
     {
-        var response = await apiClient.Deploy(new DeployRequest
+        var response = await ApiClient.Deploy(new DeployRequest
         {
             Project = "test",
             Environment = "dev",
@@ -70,7 +49,7 @@ public sealed class DeployTests : IClassFixture<TestFixture>
     {
         foreach (var environment in new[] { "dev", "qa", "prod" })
         {
-            var response = await apiClient.Deploy(new DeployRequest
+            var response = await ApiClient.Deploy(new DeployRequest
             {
                 Project = "test",
                 Environment = environment,
@@ -97,7 +76,7 @@ public sealed class DeployTests : IClassFixture<TestFixture>
         var containerName = $"deployer-test-{tag}";
         await StopAndRemoveContainer(containerName);
 
-        var response = await apiClient.Deploy(new DeployRequest
+        var response = await ApiClient.Deploy(new DeployRequest
         {
             Project = project,
             Environment = environment,
@@ -105,13 +84,13 @@ public sealed class DeployTests : IClassFixture<TestFixture>
         });
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
-        var containers = await dockerClient.Containers.ListContainersAsync(
+        var containers = await DockerClient.Containers.ListContainersAsync(
             new ContainersListParameters { All = true });
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{containerName}"));
         container.Should().NotBeNull();
         container.Image.Should().Be(expectedImage);
 
-        var inspect = await dockerClient.Containers.InspectContainerAsync(container.ID);
+        var inspect = await DockerClient.Containers.InspectContainerAsync(container.ID);
         inspect.Config.Env.Should().NotBeNull();
         inspect.Config.Env.Should().Contain("COMMON=COMMON_VALUE");
         inspect.Config.Env.Should().Contain("SECRET=SECRET_DEV");
@@ -120,13 +99,13 @@ public sealed class DeployTests : IClassFixture<TestFixture>
 
     async Task StopAndRemoveContainer(string name)
     {
-        var containers = await dockerClient.Containers.ListContainersAsync(
+        var containers = await DockerClient.Containers.ListContainersAsync(
             new ContainersListParameters { All = true });
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{name}"));
         if (container == null)
             return;
 
-        await dockerClient.Containers.StopContainerAsync(container.ID, new ContainerStopParameters());
-        await dockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true });
+        await DockerClient.Containers.StopContainerAsync(container.ID, new ContainerStopParameters());
+        await DockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true });
     }
 }

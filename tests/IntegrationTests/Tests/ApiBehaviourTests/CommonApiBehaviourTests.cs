@@ -1,19 +1,15 @@
-using Api.Endpoints;
 using ApiClient.Extensions;
 using AwesomeAssertions;
 using Core.Testing.Builders;
 using Core.Testing.Extensions;
-using IntegrationTests.Collections;
-using IntegrationTests.Fixtures;
+using Core.Testing.Validators;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
-using Tests.Validators;
 using Xunit;
 using static Api.Endpoints.TestEndpoints;
 
 namespace IntegrationTests.Tests.ApiBehaviourTests
 {
-    [Collection(nameof(TestFixture))]
     public class CommonApiBehaviourTests : Test
     {
         [Fact]

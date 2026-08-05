@@ -9,7 +9,6 @@ using Core.Testing.Validators;
 
 namespace IntegrationTests.Tests.ApiBehaviourTests
 {
-    [Collection(nameof(TestFixture))]
     public class BadRequestTests : Test
     {
         public class BadRequestCase

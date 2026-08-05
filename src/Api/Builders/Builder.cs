@@ -1,4 +1,4 @@
-﻿namespace Core.Builders
+﻿namespace Api.Builders
 {
     public abstract class Builder<T> : IBuilder<T>
     {
