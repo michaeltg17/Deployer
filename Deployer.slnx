@@ -1,4 +1,11 @@
 <Solution>
-  <Project Path="src/Api.csproj" />
-  <Project Path="tests/Tests.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/Api/Api.csproj" />
+    <Project Path="src/ApiClient/ApiClient.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Core.Testing/Core.Testing.csproj" Id="834a186b-672d-4764-8077-bef4a20ddd15" />
+    <Project Path="tests/EndToEndTests/EndToEndTests.csproj" Id="c7c3f6bb-0125-4df8-a2c3-caa458907f1c" />
+    <Project Path="tests/IntegrationTests/IntegrationTests.csproj" />
+  </Folder>
 </Solution>

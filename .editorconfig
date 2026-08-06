@@ -33,3 +33,9 @@ dotnet_diagnostic.IDE0022.severity = none
 
 # IDE0036: Order modifiers
 dotnet_diagnostic.IDE0036.severity = none
+
+# CA2007: Consider calling ConfigureAwait on the awaited task
+dotnet_diagnostic.CA2007.severity = none
+
+# CA1515: Consider making public types internal
+dotnet_diagnostic.CA1515.severity = none
