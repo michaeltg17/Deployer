@@ -24,8 +24,8 @@ public sealed class EndToEndFixture : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var repoRoot = GetRepoRoot();
-        var testKdbx = Path.Combine(repoRoot, "tests", "test.kdbx");
-        var projectsDir = Path.Combine(repoRoot, "tests", "projects");
+        var testKdbx = Path.Combine(repoRoot, "tests", "Core.Testing", "Sandbox", "secrets.kdbx");
+        var projectsDir = Path.Combine(repoRoot, "tests", "Core.Testing", "Sandbox", "projects");
 
         await StopAndRemoveContainers("deployer-e2e", "deployer-test-*");
 
@@ -132,7 +132,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
     string GetRepoRoot()
     {
         var assemblyDir = Path.GetDirectoryName(typeof(EndToEndFixture).Assembly.Location)!;
-        return Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", ".."));
+        return Path.GetFullPath(Path.Combine(assemblyDir, "..", "..", "..", "..", ".."));
     }
 
     async Task StopAndRemoveContainers(params string[] patterns)

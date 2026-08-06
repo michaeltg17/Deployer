@@ -8,7 +8,9 @@ COPY Directory.Packages.props ./
 COPY Deployer.slnx ./
 COPY src/Api/Api.csproj src/Api/
 COPY src/ApiClient/ApiClient.csproj src/ApiClient/
-COPY tests/Tests.csproj tests/
+COPY tests/Core.Testing/Core.Testing.csproj tests/Core.Testing/
+COPY tests/EndToEndTests/EndToEndTests.csproj tests/EndToEndTests/
+COPY tests/IntegrationTests/IntegrationTests.csproj tests/IntegrationTests/
 RUN dotnet restore Deployer.slnx
 
 # Layer 2: Copy full source and publish (invalidated on code change)
