@@ -7,5 +7,6 @@
     <Project Path="tests/Core.Testing/Core.Testing.csproj" Id="834a186b-672d-4764-8077-bef4a20ddd15" />
     <Project Path="tests/EndToEndTests/EndToEndTests.csproj" Id="c7c3f6bb-0125-4df8-a2c3-caa458907f1c" />
     <Project Path="tests/IntegrationTests/IntegrationTests.csproj" />
+    <Project Path="tests/UnitTests/UnitTests.csproj" Id="9447c0b7-cbcc-4c79-94a4-e1fc0c2696a4" />
   </Folder>
 </Solution>
