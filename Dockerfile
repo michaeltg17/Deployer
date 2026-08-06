@@ -23,6 +23,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0-alpine
 RUN apk add --no-cache docker-cli docker-cli-compose keepassxc
 WORKDIR /app
 COPY --from=build /app .
+COPY --from=build /src/tests/Core.Testing/Sandbox /test/sandbox
 
 ENV ASPNETCORE_URLS=http://0.0.0.0:8080
 

@@ -24,8 +24,6 @@ public sealed class EndToEndFixture : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         var repoRoot = GetRepoRoot();
-        var testKdbx = Path.Combine(repoRoot, "tests", "Core.Testing", "Sandbox", "secrets.kdbx");
-        var projectsDir = Path.Combine(repoRoot, "tests", "Core.Testing", "Sandbox", "projects");
 
         await StopAndRemoveContainers("deployer-e2e", "deployer-test-*");
 
@@ -35,7 +33,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
             await DockerClient.Images.DeleteImageAsync(existingImage.ID, new ImageDeleteParameters());
 
         await BuildImage(repoRoot);
-        await StartContainer(testKdbx, projectsDir);
+        await StartContainer();
         await WaitForReady();
     }
 
@@ -71,59 +69,40 @@ public sealed class EndToEndFixture : IAsyncLifetime
     async Task BuildImage(string repoRoot)
     {
         var processRunner = new ProcessRunner();
-        var result = await processRunner.Run("docker", $"build --no-cache -f Dockerfile -t {ImageName} .", repoRoot);
+        var result = await processRunner.Run("docker", $"build -f Dockerfile -t {ImageName} .", repoRoot);
         result.ExitCode.Should().Be(0, $"Build failed:\n{result.Stdout}\n{result.Stderr}");
     }
 
-    async Task StartContainer(string testKdbx, string projectsDir)
+    async Task StartContainer()
     {
         var processRunner = new ProcessRunner();
-        var mounts = string.Join(" ", new[]
-        {
-            "-v", $"/var/run/docker.sock:/var/run/docker.sock",
-            "-v", $"{testKdbx}:/test/test.kdbx:ro",
-            "-v", $"{projectsDir}:/projects",
-        });
-        var envVar = string.Join(" ", new[]
-        {
-            "-e", "KeePassDbPath=/test/test.kdbx",
-            "-e", "KeePassDbPassword=test",
-            "-e", "ProjectsDir=/projects",
-            "-e", "ThrowIfNoSecrets=false",
-        });
-
         var isLinux = Environment.OSVersion.Platform == PlatformID.Unix;
-        var args = $"run -d --name deployer-e2e --privileged -p 0:8080 {mounts} {envVar} {ImageName}";
+        var args = isLinux
+            ? "run -d --name deployer-e2e --privileged -v /var/run/docker.sock:/var/run/docker.sock -e KeePassDbPath=/test/sandbox/secrets.kdbx -e KeePassDbPassword=test -e ProjectsDir=/test/sandbox/projects -e ThrowIfNoSecrets=false " + ImageName
+            : "run -d --name deployer-e2e --privileged -p 0:8080 -v /var/run/docker.sock:/var/run/docker.sock -e KeePassDbPath=/test/sandbox/secrets.kdbx -e KeePassDbPassword=test -e ProjectsDir=/test/sandbox/projects -e ThrowIfNoSecrets=false " + ImageName;
         var result = await processRunner.Run("docker", args);
         result.ExitCode.Should().Be(0, $"Container start failed:\n{result.Stdout}\n{result.Stderr}");
         ContainerId = result.Stdout.TrimEnd('\r', '\n');
 
         await Task.Delay(2000);
 
-        string GetContainerUrl()
-        {
-            var inspect = DockerClient.Containers.InspectContainerAsync(ContainerId).Result;
-            var hostPort = inspect.NetworkSettings.Ports["8080/tcp"]![0].HostPort;
-
-            if (!isLinux)
-            {
-                // Windows (Docker Desktop): port mapping is on Windows host
-                return $"http://localhost:{hostPort}";
-            }
-
-            // Linux DinD: CI container can't reach its own localhost.
-            // Use Docker bridge gateway to reach host's port mapping.
-            var gatewayIp = inspect.NetworkSettings.Networks["bridge"]?.Gateway;
-            return !string.IsNullOrEmpty(gatewayIp)
-                ? $"http://{gatewayIp}:{hostPort}"
-                : $"http://localhost:{hostPort}";
-        }
+        var inspect = DockerClient.Containers.InspectContainerAsync(ContainerId).Result;
+        var containerIp = inspect.NetworkSettings.Networks["bridge"]?.IPAddress;
 
         HttpClient = new HttpClient
         {
-            BaseAddress = new Uri(GetContainerUrl()),
+            BaseAddress = new Uri(GetUrl()),
         };
         HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+        string GetUrl()
+        {
+            if (isLinux && !string.IsNullOrEmpty(containerIp))
+                return $"http://{containerIp}:8080";
+
+            var hostPort = inspect.NetworkSettings.Ports["8080/tcp"]![0].HostPort;
+            return $"http://localhost:{hostPort}";
+        }
     }
 
     async Task WaitForReady()
