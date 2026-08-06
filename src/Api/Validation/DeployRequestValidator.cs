@@ -1,4 +1,5 @@
 using Api.Models;
+using Api.Settings;
 using FluentValidation;
 
 namespace Api.Validation;

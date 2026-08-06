@@ -1,4 +1,4 @@
-namespace Api.Models;
+namespace Api.Settings;
 
 public sealed class DeployerSettings : IDeployerSettings
 {

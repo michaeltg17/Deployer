@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Options;
-using Api.Models;
+using Api.Settings;
 
 namespace Api.Validation;
 

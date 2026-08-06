@@ -1,5 +1,4 @@
 ﻿using Api.Endpoints;
-using Api.Models;
 using Api.Services;
 using Api.Validation;
 using FluentValidation;
@@ -8,6 +7,7 @@ using Serilog;
 using System.Linq.Expressions;
 using System.Reflection;
 using Api.Extensions;
+using Api.Settings;
 
 namespace Api
 {

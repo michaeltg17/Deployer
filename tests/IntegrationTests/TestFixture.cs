@@ -1,5 +1,5 @@
-using Api.Models;
 using Api.Services;
+using Api.Settings;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Microsoft.AspNetCore.Hosting;
@@ -76,7 +76,7 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
                 { nameof(DeployerSettings.KeePassDbPath), testKdbxPath },
                 { nameof(DeployerSettings.KeePassDbPassword), "test" },
                 { nameof(DeployerSettings.ProjectsDir), TestProjectsDir },
-                { nameof(DeployerSettings.ThrowIfNoSecrets), "false" },
+                { nameof(DeployerSettings.ThrowIfNoSecrets), "true" },
             });
         });
     }
