@@ -3,7 +3,7 @@ using Api.Settings;
 
 namespace Api.Validation;
 
-internal sealed class DeployerSettingsValidator : IValidateOptions<DeployerSettings>
+public sealed class DeployerSettingsValidator : IValidateOptions<DeployerSettings>
 {
     public ValidateOptionsResult Validate(string? name, DeployerSettings options)
     {

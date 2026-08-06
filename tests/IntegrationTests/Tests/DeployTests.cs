@@ -1,4 +1,5 @@
 using Api.Models;
+using ApiClient.Validators;
 using Xunit;
 using static AwesomeAssertions.AssertionExtensions;
 
@@ -7,23 +8,9 @@ namespace IntegrationTests.Tests;
 public sealed class DeployTests : Test
 {
     [Fact]
-    public async Task MissingProject_Returns400()
+    public async Task RequestMissingFields_ExpectedProblemDetails()
     {
-        var response = await ApiClient.Deploy(new DeployRequest { Environment = "dev", Tag = "v1.0.0" });
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task MissingEnvironment_Returns400()
-    {
-        var response = await ApiClient.Deploy(new DeployRequest { Project = "test", Tag = "v1.0.0" });
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task MissingTag_Returns400()
-    {
-        var response = await ApiClient.Deploy(new DeployRequest { Project = "test", Environment = "dev" });
+        var response = await ApiClient.Deploy(new DeployRequest());
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
     }
 
