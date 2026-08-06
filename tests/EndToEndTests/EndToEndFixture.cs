@@ -92,6 +92,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
             "-e", "ThrowIfNoSecrets=false",
         });
 
+        var isLinux = Environment.OSVersion.Platform == PlatformID.Unix;
         var args = $"run -d --name deployer-e2e --privileged -p 0:8080 {mounts} {envVar} {ImageName}";
         var result = await processRunner.Run("docker", args);
         result.ExitCode.Should().Be(0, $"Container start failed:\n{result.Stdout}\n{result.Stderr}");
@@ -99,14 +100,28 @@ public sealed class EndToEndFixture : IAsyncLifetime
 
         await Task.Delay(2000);
 
-        var inspect = await DockerClient.Containers.InspectContainerAsync(ContainerId);
-        var containerIp = inspect.NetworkSettings.IPAddress;
-        var uri = !string.IsNullOrEmpty(containerIp)
-            ? $"http://{containerIp}:8080"
-            : $"http://localhost:{inspect.NetworkSettings.Ports["8080/tcp"]![0].HostPort}";
+        string GetContainerUrl()
+        {
+            var inspect = DockerClient.Containers.InspectContainerAsync(ContainerId).Result;
+            var hostPort = inspect.NetworkSettings.Ports["8080/tcp"]![0].HostPort;
+
+            if (!isLinux)
+            {
+                // Windows (Docker Desktop): port mapping is on Windows host
+                return $"http://localhost:{hostPort}";
+            }
+
+            // Linux DinD: CI container can't reach its own localhost.
+            // Use Docker bridge gateway to reach host's port mapping.
+            var gatewayIp = inspect.NetworkSettings.Networks["bridge"]?.Gateway;
+            return !string.IsNullOrEmpty(gatewayIp)
+                ? $"http://{gatewayIp}:{hostPort}"
+                : $"http://localhost:{hostPort}";
+        }
+
         HttpClient = new HttpClient
         {
-            BaseAddress = new Uri(uri),
+            BaseAddress = new Uri(GetContainerUrl()),
         };
         HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
     }
@@ -117,7 +132,7 @@ public sealed class EndToEndFixture : IAsyncLifetime
         {
             try
             {
-                var response = await HttpClient.GetAsync("/Test/GetOk");
+                var response = await HttpClient.GetAsync("/test/GetOk");
                 if (response.IsSuccessStatusCode)
                     return;
             }
