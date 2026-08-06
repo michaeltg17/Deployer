@@ -1,5 +1,4 @@
 using Api.Models;
-using Docker.DotNet.Models;
 using Xunit;
 using static AwesomeAssertions.AssertionExtensions;
 
@@ -84,8 +83,7 @@ public sealed class DeployTests : Test
         });
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
-        var containers = await DockerClient.Containers.ListContainersAsync(
-            new ContainersListParameters { All = true });
+        var containers = await GetContainers();
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{containerName}"));
         container.Should().NotBeNull();
         container.Image.Should().Be(expectedImage);
@@ -95,17 +93,5 @@ public sealed class DeployTests : Test
         inspect.Config.Env.Should().Contain("COMMON=COMMON_VALUE");
         inspect.Config.Env.Should().Contain("SECRET=SECRET_DEV");
         await StopAndRemoveContainer(containerName);
-    }
-
-    async Task StopAndRemoveContainer(string name)
-    {
-        var containers = await DockerClient.Containers.ListContainersAsync(
-            new ContainersListParameters { All = true });
-        var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{name}"));
-        if (container == null)
-            return;
-
-        await DockerClient.Containers.StopContainerAsync(container.ID, new ContainerStopParameters());
-        await DockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true });
     }
 }
