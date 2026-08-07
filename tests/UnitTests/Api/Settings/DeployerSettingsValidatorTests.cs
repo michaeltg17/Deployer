@@ -1,142 +1,92 @@
-using Api.Settings;
 using Api.Validation;
 using AwesomeAssertions;
+using Core.Testing.Builders;
 using Xunit;
 
 namespace UnitTests.Api.Settings;
 
 public sealed class DeployerSettingsValidatorTests
 {
-    readonly DeployerSettingsValidator _validator;
+    readonly DeployerSettingsValidator validator;
 
     public DeployerSettingsValidatorTests()
     {
-        _validator = new DeployerSettingsValidator();
+        validator = new DeployerSettingsValidator();
     }
 
-    [Fact]
-    public void Options_NULL_ThrowsArgumentNullException()
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void InvalidKeePassDbPath_Error(string? keePassDbPath)
     {
-        Action action = () => _validator.Validate(null, null!);
-        action.Should().Throw<ArgumentNullException>();
-    }
+        //Given
+        var settings = new DeployerSettingsBuilder()
+            .WithValues(s => s.KeePassDbPath = keePassDbPath!)
+            .Build();
 
-    [Fact]
-    public void KeePassDbPath_EMPTY_Fails()
-    {
-        var settings = new DeployerSettings
-        {
-            KeePassDbPath = "",
-            KeePassDbPassword = "password",
-            ThrowIfNoSecrets = true,
-            ProjectsDir = "/projects"
-        };
+        //When
+        var result = validator.Validate(null, settings);
 
-        var result = _validator.Validate(null, settings);
-
+        //Then
         result.Failed.Should().BeTrue();
-        result.Failures.Should().ContainSingle().Which.Should().Contain(nameof(settings.KeePassDbPath));
+        result.Failures.Should().ContainSingle().Which.Should().Be("The 'KeePassDbPath' setting is required");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void InvalidKeePassDbPassword_Error(string? keePassDbPassword)
+    {
+        //Given
+        var settings = new DeployerSettingsBuilder()
+            .WithValues(s => s.KeePassDbPassword = keePassDbPassword!)
+            .Build();
+
+        //When
+        var result = validator.Validate(null, settings);
+
+        //Then
+        result.Failed.Should().BeTrue();
+        result.Failures.Should().ContainSingle().Which.Should().Be("The 'KeePassDbPassword' setting is required");
     }
 
     [Fact]
-    public void KeePassDbPath_WhiteSpace_Fails()
+    public void Valid_NoErrors()
     {
-        var settings = new DeployerSettings
-        {
-            KeePassDbPath = "   ",
-            KeePassDbPassword = "password",
-            ThrowIfNoSecrets = true,
-            ProjectsDir = "/projects"
-        };
+        //When
+        var result = validator.Validate(null, new DeployerSettingsBuilder().Build());
 
-        var result = _validator.Validate(null, settings);
-
-        result.Failed.Should().BeTrue();
-        result.Failures.Should().ContainSingle().Which.Should().Contain(nameof(settings.KeePassDbPath));
+        //Then
+        result.Succeeded.Should().BeTrue();
     }
 
     [Fact]
-    public void KeePassDbPassword_EMPTY_Fails()
+    public void AllNull_MultipleErrors()
     {
-        var settings = new DeployerSettings
-        {
-            KeePassDbPath = "secrets.kdbx",
-            KeePassDbPassword = "",
-            ThrowIfNoSecrets = true,
-            ProjectsDir = "/projects"
-        };
+        //Given
+        var settings = new DeployerSettingsBuilder()
+            .WithValues(s =>
+            {
+                s.KeePassDbPath = null!;
+                s.KeePassDbPassword = null!;
+            })
+            .Build();
 
-        var result = _validator.Validate(null, settings);
+        //When
+        var result = validator.Validate(null, settings);
 
-        result.Failed.Should().BeTrue();
-        result.Failures.Should().ContainSingle().Which.Should().Contain(nameof(settings.KeePassDbPassword));
-    }
-
-    [Fact]
-    public void KeePassDbPassword_WhiteSpace_Fails()
-    {
-        var settings = new DeployerSettings
-        {
-            KeePassDbPath = "secrets.kdbx",
-            KeePassDbPassword = "   ",
-            ThrowIfNoSecrets = true,
-            ProjectsDir = "/projects"
-        };
-
-        var result = _validator.Validate(null, settings);
-
-        result.Failed.Should().BeTrue();
-        result.Failures.Should().ContainSingle().Which.Should().Contain(nameof(settings.KeePassDbPassword));
-    }
-
-    [Fact]
-    public void BothMissing_FailsWithTwoErrors()
-    {
-        var settings = new DeployerSettings
-        {
-            KeePassDbPath = "",
-            KeePassDbPassword = "",
-            ThrowIfNoSecrets = true,
-            ProjectsDir = "/projects"
-        };
-
-        var result = _validator.Validate(null, settings);
-
-        result.Failed.Should().BeTrue();
+        //Then
         result.Failures.Should().HaveCount(2);
-        result.Failures.Should().Contain(f => f.Contains(nameof(settings.KeePassDbPath)));
-        result.Failures.Should().Contain(f => f.Contains(nameof(settings.KeePassDbPassword)));
+        result.Failures.Should().Contain("The 'KeePassDbPath' setting is required");
+        result.Failures.Should().Contain("The 'KeePassDbPassword' setting is required");
     }
 
     [Fact]
-    public void ValidSettings_Succeeds()
+    public void NullOptions_ThrowsArgumentNullException()
     {
-        var settings = new DeployerSettings
-        {
-            KeePassDbPath = "secrets.kdbx",
-            KeePassDbPassword = "password",
-            ThrowIfNoSecrets = true,
-            ProjectsDir = "/projects"
-        };
-
-        var result = _validator.Validate(null, settings);
-
-        result.Succeeded.Should().BeTrue();
-    }
-
-    [Fact]
-    public void ValidSettings_NameParameterIgnored()
-    {
-        var settings = new DeployerSettings
-        {
-            KeePassDbPath = "secrets.kdbx",
-            KeePassDbPassword = "password",
-            ThrowIfNoSecrets = true,
-            ProjectsDir = "/projects"
-        };
-
-        var result = _validator.Validate("some-name", settings);
-
-        result.Succeeded.Should().BeTrue();
+        Action action = () => validator.Validate(null, null!);
+        action.Should().Throw<ArgumentNullException>();
     }
 }
