@@ -131,12 +131,7 @@ public sealed class DeployRequestValidatorTests : IDisposable
     [Fact]
     public void AllFieldsNull_ReturnsMultipleErrors()
     {
-        var request = new DeployRequestBuilder().WithValues(r =>
-        {
-            r.Project = null;
-            r.Environment = null;
-            r.Tag = null;
-        }).Build();
+        var request = new DeployRequest();
 
         var result = validator.TestValidate(request);
 
