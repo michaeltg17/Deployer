@@ -64,7 +64,7 @@
 //    }
 //    [Theory]
 //    [MemberData(nameof(GetInvalidPropertyCases))]
-//    public void InvalidProperty_ExpectedMessage(
+//    public void InvalidProperty_ExpectedError(
 //        DeployRequest request,
 //        Expression<Func<DeployRequest, object>> property,
 //        string expectedMessage)

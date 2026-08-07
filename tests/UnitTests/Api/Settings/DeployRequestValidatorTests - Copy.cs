@@ -37,12 +37,11 @@ public sealed class DeployRequestValidatorTests : IDisposable
     public void Dispose() => Directory.Delete(tempDir, true);
 
     [Theory]
-    [InlineData("test-project", true, null)]
     [InlineData(null, false, "'Project' must not be empty.")]
     [InlineData("", false, "'Project' must not be empty.")]
     [InlineData(" ", false, "'Project' must not be empty.")]
     [InlineData("nonexistent", false, "Docker compose file not found for project 'nonexistent': docker-compose.yml")]
-    public void Project_ShouldValidate(string? value, bool isValid, string? expectedMessage)
+    public void InvalidProject_ExpectedError(string? value, bool isValid, string? expectedMessage)
     {
         var request = new DeployRequestBuilder().WithValues(r => r.Project = value).Build();
         var result = validator.TestValidate(request);
@@ -55,28 +54,26 @@ public sealed class DeployRequestValidatorTests : IDisposable
     }
 
     [Theory]
-    [InlineData("dev", true, null)]
-    [InlineData(null, false, "'Environment' must not be empty.")]
-    [InlineData("", false, "'Environment' must not be empty.")]
-    [InlineData("   ", false, "'Environment' must not be empty.")]
-    public void Environment_ShouldValidate(string? value, bool isValid, string? expectedMessage)
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void InvalidEnvironment_ExpectedError(string? environment)
     {
-        var request = new DeployRequestBuilder().WithValues(r => r.Environment = value).Build();
+        //Given
+        var request = new DeployRequestBuilder().WithValues(r => r.Environment = environment).Build();
+
+        //When
         var result = validator.TestValidate(request);
 
-        if (isValid) result.ShouldNotHaveAnyValidationErrors();
-        else
-        {
-            result.ShouldHaveValidationErrorFor(r => r.Environment).WithErrorMessage(expectedMessage!).Only();
-        }
+        //Then
+        result.ShouldHaveValidationErrorFor(r => r.Environment).WithErrorMessage("'Environment' must not be empty.").Only();
     }
 
     [Theory]
-    [InlineData("v1", true, null)]
     [InlineData(null, false, "'Tag' must not be empty.")]
     [InlineData("", false, "'Tag' must not be empty.")]
     [InlineData("   ", false, "'Tag' must not be empty.")]
-    public void Tag_ShouldValidate(string? value, bool isValid, string? expectedMessage)
+    public void InvalidTag_ExpectedError(string? value, string? expectedMessage)
     {
         var request = new DeployRequestBuilder().WithValues(r => r.Tag = value).Build();
         var result = validator.TestValidate(request);
@@ -90,12 +87,22 @@ public sealed class DeployRequestValidatorTests : IDisposable
     }
 
     [Fact]
-    public void AllFieldsNull_ReturnsMultipleErrors()
+    public void Valid_NoErrors()
     {
-        var request = new DeployRequest();
+        //When
+        var result = validator.TestValidate(new DeployRequestBuilder().Build());
 
-        var result = validator.TestValidate(request);
+        //Then
+        result.ShouldNotHaveAnyValidationErrors();
+    }
 
+    [Fact]
+    public void AllNull_ReturnsMultipleErrors()
+    {
+        //When
+        var result = validator.TestValidate(new DeployRequest());
+
+        //Then
         result.IsValid.Should().BeFalse();
         result.Errors.Should().HaveCount(3);
     }
