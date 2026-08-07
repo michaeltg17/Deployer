@@ -1,12 +1,14 @@
-﻿using System.Text.RegularExpressions;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.Text.RegularExpressions;
 
-namespace Core.Testing.Validators
+namespace Core.Testing
 {
-    public static partial class TraceIdValidator
+    public static partial class TraceIdAssertions
     {
         static readonly Regex TraceIdRegex = TraceIdRegexValidator();
 
-        public static bool IsValid(string traceId)
+        [SuppressMessage("Style", "IDE0046:Convert to conditional expression", Justification = "Clearer")]
+        public static bool Assert(string traceId)
         {
             if (string.IsNullOrWhiteSpace(traceId))
                 return false;
@@ -15,7 +17,6 @@ namespace Core.Testing.Validators
             if (!match.Success)
                 return false;
 
-            // Validate components
             var version = match.Groups["version"].Value;
             var traceIdValue = match.Groups["traceId"].Value;
             var parentId = match.Groups["parentId"].Value;

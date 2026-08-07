@@ -1,30 +1,30 @@
 ﻿using ApiClient.Extensions;
+using Core.Testing.Builders;
 using Core.Testing.Extensions;
+using AwesomeAssertions;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
-using Core.Testing.Builders;
-using AwesomeAssertions;
 
-namespace Core.Testing.Validators
+namespace Core.Testing.Assertions
 {
-    public static class ProblemDetailsValidator
+    public static class ProblemDetailsAssertions
     {
-        public static async Task ValidateValidationException(
+        public static async Task AssertValidationException(
             HttpResponseMessage response,
             string instance,
             IDictionary<string, string[]> expectedErrors)
         {
             var builder = new ProblemDetailsBuilder().WithValidationException(instance, expectedErrors);
-            await ValidateCommon(response, builder, HttpStatusCode.BadRequest);
+            await Assert(response, builder, HttpStatusCode.BadRequest);
         }
 
-        static async Task ValidateCommon(
+        static async Task Assert(
             HttpResponseMessage response,
             ProblemDetailsBuilder builder,
             HttpStatusCode statusCode)
         {
             var problemDetails = await response.To<ProblemDetails>();
-            TraceIdValidator.IsValid(problemDetails.TraceId!).Should().BeTrue();
+            TraceIdAssertions.Assert(problemDetails.TraceId!).Should().BeTrue();
 
             var expected = builder
                 .WithTraceId(problemDetails.TraceId!)

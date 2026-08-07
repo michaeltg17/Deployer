@@ -1,0 +1,20 @@
+using Api.Models;
+using Core.Builders;
+
+namespace Core.Testing.Builders
+{
+    public class DeployRequestBuilder : BuilderWithValues<DeployRequestBuilder, DeployRequest>
+    {
+        protected override DeployRequest Item { get; set; }
+
+        public DeployRequestBuilder()
+        {
+            Item = new DeployRequest
+            {
+                Project = "test-project",
+                Environment = "dev",
+                Tag = "v1"
+            };
+        }
+    }
+}

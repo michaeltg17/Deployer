@@ -1,11 +1,12 @@
 using AwesomeAssertions;
+using System.Collections.Generic;
 using Xunit;
+using Core.Testing;
 using Core.Testing.Builders;
 using Core.Testing.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using ApiClient.Extensions;
-using Core.Testing.Validators;
 
 namespace IntegrationTests.Tests.ApiBehaviourTests
 {
@@ -72,7 +73,7 @@ namespace IntegrationTests.Tests.ApiBehaviourTests
 
             //Then
             var problemDetails = await response.To<ProblemDetails>();
-            TraceIdValidator.IsValid(problemDetails.TraceId!).Should().BeTrue();
+            TraceIdAssertions.Assert(problemDetails.TraceId!).Should().BeTrue();
 
             var expected = new ProblemDetailsBuilder()
                 .WithTraceId(problemDetails.TraceId!)

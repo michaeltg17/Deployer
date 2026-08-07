@@ -1,15 +1,15 @@
 using System.Text.RegularExpressions;
 
-namespace Core.Testing.Validators
+namespace Core.Testing
 {
-    public static partial class ExceptionValidator
+    public static partial class ExceptionAssertions
     {
         static readonly Regex TypeMessageRegex = TypeMessageRegexValidator();
         static readonly Regex StackFrameRegex = StackFrameRegexValidator();
         static readonly Regex SourceLocationRegex = SourceLocationRegexValidator();
         static readonly Regex CompilerGeneratedRegex = CompilerGeneratedRegexValidator();
 
-        public static bool IsValid(string exceptionText)
+        public static bool Assert(string exceptionText)
         {
             if (string.IsNullOrWhiteSpace(exceptionText))
                 return false;

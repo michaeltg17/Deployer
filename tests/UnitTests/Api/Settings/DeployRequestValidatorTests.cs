@@ -1,22 +1,25 @@
+using System.Linq.Expressions;
 using Api.Models;
 using Api.Settings;
 using Api.Validation;
 using AwesomeAssertions;
+using Core.Testing.Builders;
+using FluentValidation.TestHelper;
 using Xunit;
 
 namespace UnitTests.Api.Settings;
 
 public sealed class DeployRequestValidatorTests : IDisposable
 {
-    readonly string _tempDir;
-    readonly DeployRequestValidator _validator;
+    readonly string tempDir;
+    readonly DeployRequestValidator validator;
 
     public DeployRequestValidatorTests()
     {
-        _tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
-        Directory.CreateDirectory(_tempDir);
+        tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+        Directory.CreateDirectory(tempDir);
 
-        var validProjectDir = Path.Combine(_tempDir, "valid-project");
+        var validProjectDir = Path.Combine(tempDir, "test-project");
         Directory.CreateDirectory(validProjectDir);
         File.WriteAllText(Path.Combine(validProjectDir, "docker-compose.yml"), "");
 
@@ -25,141 +28,117 @@ public sealed class DeployRequestValidatorTests : IDisposable
             KeePassDbPath = "secrets.kdbx",
             KeePassDbPassword = "password",
             ThrowIfNoSecrets = true,
-            ProjectsDir = _tempDir
+            ProjectsDir = tempDir
         };
 
-        _validator = new DeployRequestValidator(settings);
+        validator = new DeployRequestValidator(settings);
     }
 
-    public void Dispose()
+    public void Dispose() => Directory.Delete(tempDir, true);
+
+    public static TheoryData<DeployRequest, Expression<Func<DeployRequest, object>>, bool> GetProjectCases()
     {
-        Directory.Delete(_tempDir, true);
+        return new TheoryData<DeployRequest, Expression<Func<DeployRequest, object>>, bool>
+        {
+            // Valid: compose file exists
+            { new DeployRequestBuilder().Build(), r => r.Project, true },
+            // Invalid: null
+            { new DeployRequestBuilder().WithValues(r => r.Project = null).Build(), r => r.Project, false },
+            // Invalid: empty
+            { new DeployRequestBuilder().WithValues(r => r.Project = "").Build(), r => r.Project, false },
+            // Invalid: whitespace
+            { new DeployRequestBuilder().WithValues(r => r.Project = " ").Build(), r => r.Project, false },
+            // Invalid: missing compose file
+            { new DeployRequestBuilder().WithValues(r => r.Project = "nonexistent").Build(), r => r.Project, false },
+        };
     }
 
-    [Fact]
-    public void Project_NULL_Fails()
+    [Theory]
+    [MemberData(nameof(GetProjectCases))]
+    public void Project_ShouldHaveExpectedResult(
+        DeployRequest request,
+        Expression<Func<DeployRequest, object>> property,
+        bool isValid)
     {
-        var request = new DeployRequest { Project = null, Environment = "dev", Tag = "v1" };
-        var result = _validator.Validate(request);
+        // When
+        var result = validator.TestValidate(request);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Project");
+        // Then
+        if (isValid) result.ShouldNotHaveAnyValidationErrors();
+        else result.ShouldHaveValidationErrorFor(property).Only();
     }
 
-    [Fact]
-    public void Project_Empty_Fails()
+    public static TheoryData<DeployRequest, Expression<Func<DeployRequest, object>>, bool> GetEnvironmentCases()
     {
-        var request = new DeployRequest { Project = "", Environment = "dev", Tag = "v1" };
-        var result = _validator.Validate(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Project");
+        return new TheoryData<DeployRequest, Expression<Func<DeployRequest, object>>, bool>
+        {
+            // Valid: non-empty
+            { new DeployRequestBuilder().Build(), r => r.Environment, true },
+            // Invalid: null
+            { new DeployRequestBuilder().WithValues(r => r.Environment = null).Build(), r => r.Environment, false },
+            // Invalid: empty
+            { new DeployRequestBuilder().WithValues(r => r.Environment = "").Build(), r => r.Environment, false },
+            // Invalid: whitespace
+            { new DeployRequestBuilder().WithValues(r => r.Environment = "   ").Build(), r => r.Environment, false },
+        };
     }
 
-    [Fact]
-    public void Project_WhiteSpace_Fails()
+    [Theory]
+    [MemberData(nameof(GetEnvironmentCases))]
+    public void Environment_ShouldHaveExpectedResult(
+        DeployRequest request,
+        Expression<Func<DeployRequest, object>> property,
+        bool isValid)
     {
-        var request = new DeployRequest { Project = " ", Environment = "dev", Tag = "v1" };
-        var result = _validator.Validate(request);
+        // When
+        var result = validator.TestValidate(request);
 
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Project");
+        // Then
+        if (isValid) result.ShouldNotHaveAnyValidationErrors();
+        else result.ShouldHaveValidationErrorFor(property).Only();
     }
 
-    [Fact]
-    public void Project_MissingComposeFile_Fails()
+    public static TheoryData<DeployRequest, Expression<Func<DeployRequest, object>>, bool> GetTagCases()
     {
-        var request = new DeployRequest { Project = "nonexistent", Environment = "dev", Tag = "v1" };
-        var result = _validator.Validate(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e =>
-            e.PropertyName == "Project" && e.ErrorMessage.Contains("docker-compose.yml"));
+        return new TheoryData<DeployRequest, Expression<Func<DeployRequest, object>>, bool>
+        {
+            // Valid: non-empty
+            { new DeployRequestBuilder().Build(), r => r.Tag, true },
+            // Invalid: null
+            { new DeployRequestBuilder().WithValues(r => r.Tag = null).Build(), r => r.Tag, false },
+            // Invalid: empty
+            { new DeployRequestBuilder().WithValues(r => r.Tag = "").Build(), r => r.Tag, false },
+            // Invalid: whitespace
+            { new DeployRequestBuilder().WithValues(r => r.Tag = "   ").Build(), r => r.Tag, false },
+        };
     }
 
-    [Fact]
-    public void Project_ComposeFileExists_Passes()
+    [Theory]
+    [MemberData(nameof(GetTagCases))]
+    public void Tag_ShouldHaveExpectedResult(
+        DeployRequest request,
+        Expression<Func<DeployRequest, object>> property,
+        bool isValid)
     {
-        var request = new DeployRequest { Project = "valid-project", Environment = "dev", Tag = "v1" };
-        var result = _validator.Validate(request);
+        // When
+        var result = validator.TestValidate(request);
 
-        result.IsValid.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Environment_NULL_Fails()
-    {
-        var request = new DeployRequest { Project = "valid-project", Environment = null, Tag = "v1" };
-        var result = _validator.Validate(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Environment");
-    }
-
-    [Fact]
-    public void Environment_Empty_Fails()
-    {
-        var request = new DeployRequest { Project = "valid-project", Environment = "", Tag = "v1" };
-        var result = _validator.Validate(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Environment");
-    }
-
-    [Fact]
-    public void Environment_WhiteSpace_Fails()
-    {
-        var request = new DeployRequest { Project = "valid-project", Environment = "   ", Tag = "v1" };
-        var result = _validator.Validate(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Environment");
-    }
-
-    [Fact]
-    public void Tag_NULL_Fails()
-    {
-        var request = new DeployRequest { Project = "valid-project", Environment = "dev", Tag = null };
-        var result = _validator.Validate(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Tag");
-    }
-
-    [Fact]
-    public void Tag_Empty_Fails()
-    {
-        var request = new DeployRequest { Project = "valid-project", Environment = "dev", Tag = "" };
-        var result = _validator.Validate(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Tag");
-    }
-
-    [Fact]
-    public void Tag_WhiteSpace_Fails()
-    {
-        var request = new DeployRequest { Project = "valid-project", Environment = "dev", Tag = "   " };
-        var result = _validator.Validate(request);
-
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().ContainSingle(e => e.PropertyName == "Tag");
-    }
-
-    [Fact]
-    public void AllValid_Passes()
-    {
-        var request = new DeployRequest { Project = "valid-project", Environment = "dev", Tag = "v1" };
-        var result = _validator.Validate(request);
-
-        result.IsValid.Should().BeTrue();
+        // Then
+        if (isValid) result.ShouldNotHaveAnyValidationErrors();
+        else result.ShouldHaveValidationErrorFor(property).Only();
     }
 
     [Fact]
     public void AllFieldsNull_ReturnsMultipleErrors()
     {
-        var request = new DeployRequest();
-        var result = _validator.Validate(request);
+        var request = new DeployRequestBuilder().WithValues(r =>
+        {
+            r.Project = null;
+            r.Environment = null;
+            r.Tag = null;
+        }).Build();
+
+        var result = validator.TestValidate(request);
 
         result.IsValid.Should().BeFalse();
         result.Errors.Should().HaveCount(3);

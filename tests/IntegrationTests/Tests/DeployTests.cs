@@ -1,5 +1,6 @@
 using Api.Models;
 using ApiClient.Validators;
+using Core.Testing.Assertions;
 using Xunit;
 using static AwesomeAssertions.AssertionExtensions;
 
@@ -10,8 +11,19 @@ public sealed class DeployTests : Test
     [Fact]
     public async Task RequestMissingFields_ExpectedProblemDetails()
     {
+        //When
         var response = await ApiClient.Deploy(new DeployRequest());
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+
+        //Then
+        await ProblemDetailsAssertions.AssertValidationException(
+            response,
+            "/",
+            new Dictionary<string, string[]>
+            {
+                { "project", ["'project' must not be empty."] },
+                { "environment", ["'environment' must not be empty."] },
+                { "tag", ["'tag' must not be empty."] }
+            });
     }
 
     [Fact]

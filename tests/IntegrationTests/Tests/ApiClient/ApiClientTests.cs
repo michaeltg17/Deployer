@@ -3,8 +3,9 @@ using Xunit;
 using ApiClient.Extensions;
 using ApiClient.Exceptions;
 using Microsoft.AspNetCore.Mvc;
+using Core.Testing;
 using Core.Testing.Extensions;
-using Core.Testing.Validators;
+using Api.Models;
 
 namespace IntegrationTests.Tests.ApiClient
 {
@@ -18,8 +19,8 @@ namespace IntegrationTests.Tests.ApiClient
 
             //Then
             var problemDetails = await response.To<ProblemDetails>();
-            TraceIdValidator.IsValid(problemDetails.TraceId!).Should().BeTrue();
-            ExceptionValidator.IsValid(problemDetails.Exception!).Should().BeTrue();
+            TraceIdAssertions.Assert(problemDetails.TraceId!).Should().BeTrue();
+            ExceptionAssertions.Assert(problemDetails.Exception!).Should().BeTrue();
 
             var expectedMessage = $$"""
                 {
@@ -33,7 +34,7 @@ namespace IntegrationTests.Tests.ApiClient
                 }
                 """;
 
-            var func = response.To<string>;
+            var func = response.To<DeployRequest>;
             await func.Should().ThrowAsync<ApiException>().WithMessage(expectedMessage);
         }
 
@@ -44,7 +45,7 @@ namespace IntegrationTests.Tests.ApiClient
             var response = await ApiClient.Test.GetOk();
 
             //Then
-            var func = response.To<string>;
+            var func = response.To<DeployRequest>;
             await func.Should().ThrowAsync<ApiClientException>().WithMessage("Response content is null, empty or whitespace.");
         }
     }
