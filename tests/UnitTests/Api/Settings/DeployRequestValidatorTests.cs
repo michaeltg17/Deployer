@@ -36,11 +36,11 @@ public sealed class DeployRequestValidatorTests : IDisposable
     public void Dispose() => Directory.Delete(tempDir, true);
 
     [Theory]
-    [InlineData(null, null)]
-    [InlineData("", null)]
-    [InlineData(" ", null)]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
     [InlineData("nonexistent", "Docker compose file not found for project 'nonexistent': docker-compose.yml")]
-    public void InvalidProject_Error(string? project, string? expectedMessage)
+    public void InvalidProject_Error(string? project, string? expectedMessage = "'Project' must not be empty.")
     {
         //Given
         var request = new DeployRequestBuilder().WithValues(r => r.Project = project).Build();
@@ -50,7 +50,7 @@ public sealed class DeployRequestValidatorTests : IDisposable
 
         //Then
         result.ShouldHaveValidationErrorFor(r => r.Project)
-            .WithErrorMessage(expectedMessage ?? "'Project' must not be empty.")
+            .WithErrorMessage(expectedMessage)
             .Only();
     }
 
