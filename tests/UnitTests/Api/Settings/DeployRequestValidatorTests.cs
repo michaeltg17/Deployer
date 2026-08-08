@@ -35,40 +35,35 @@ public sealed class DeployRequestValidatorTests : IDisposable
 
     public void Dispose() => Directory.Delete(tempDir, true);
 
-    public sealed record InvalidTestCase(string Property, object? Value, string ExpectedMessage)
-    {
-        public string TestDisplayName { get; init } = $"Invalid{Property} - {(Value == null ? "null" : Value)}";
-    }
-
-    public static readonly InvalidTestCase[] InvalidCases =
+    public static readonly TheoryDataRow<string, object?, string>[] InvalidCases =
     [
-        new(nameof(DeployRequest.Project), null, "'Project' must not be empty."),
-        new(nameof(DeployRequest.Project), "", "'Project' must not be empty."),
-        new(nameof(DeployRequest.Project), " ", "'Project' must not be empty."),
-        new(nameof(DeployRequest.Project), "nonexistent", "Docker compose file not found for project 'nonexistent': docker-compose.yml"),
-        new(nameof(DeployRequest.Environment), null, "'Environment' must not be empty."),
-        new(nameof(DeployRequest.Environment), "", "'Environment' must not be empty."),
-        new(nameof(DeployRequest.Environment), "   ", "'Environment' must not be empty."),
-        new(nameof(DeployRequest.Tag), null, "'Tag' must not be empty."),
-        new(nameof(DeployRequest.Tag), "", "'Tag' must not be empty."),
-        new(nameof(DeployRequest.Tag), "   ", "'Tag' must not be empty."),
+        new(nameof(DeployRequest.Project), null, "'Project' must not be empty.") { TestDisplayName = "InvalidProject - null" },
+        new(nameof(DeployRequest.Project), "", "'Project' must not be empty.") { TestDisplayName = "InvalidProject - empty" },
+        new(nameof(DeployRequest.Project), " ", "'Project' must not be empty.") { TestDisplayName = "InvalidProject - whitespace" },
+        new(nameof(DeployRequest.Project), "nonexistent", "Docker compose file not found for project 'nonexistent': docker-compose.yml") { TestDisplayName = "InvalidProject - nonexistent - Missing compose file" },
+        new(nameof(DeployRequest.Environment), null, "'Environment' must not be empty.") { TestDisplayName = "InvalidEnvironment - null" },
+        new(nameof(DeployRequest.Environment), "", "'Environment' must not be empty.") { TestDisplayName = "InvalidEnvironment - empty" },
+        new(nameof(DeployRequest.Environment), "   ", "'Environment' must not be empty.") { TestDisplayName = "InvalidEnvironment - whitespace" },
+        new(nameof(DeployRequest.Tag), null, "'Tag' must not be empty.") { TestDisplayName = "InvalidTag - null" },
+        new(nameof(DeployRequest.Tag), "", "'Tag' must not be empty.") { TestDisplayName = "InvalidTag - empty" },
+        new(nameof(DeployRequest.Tag), "   ", "'Tag' must not be empty.") { TestDisplayName = "InvalidTag - whitespace" },
     ];
 
     [Theory]
     [MemberData(nameof(InvalidCases))]
-    public void InvalidProperty_Error(InvalidTestCase testCase)
+    public void InvalidProperty_Error(string property, object? value, string expectedMessage)
     {
         //Given
         var request = new DeployRequestBuilder()
-            .WithValue(testCase.Property, testCase.Value)
+            .WithValue(property, value)
             .Build();
 
         //When
         var result = validator.TestValidate(request);
 
         //Then
-        result.ShouldHaveValidationErrorFor(testCase.Property)
-            .WithErrorMessage(testCase.ExpectedMessage)
+        result.ShouldHaveValidationErrorFor(property)
+            .WithErrorMessage(expectedMessage)
             .Only();
     }
 
