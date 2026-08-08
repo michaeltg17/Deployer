@@ -1,6 +1,5 @@
 using ApiClient.Extensions;
 using AwesomeAssertions;
-using Core.Testing;
 using Core.Testing.Builders;
 using Core.Testing.Extensions;
 using Core.Testing.Validators;

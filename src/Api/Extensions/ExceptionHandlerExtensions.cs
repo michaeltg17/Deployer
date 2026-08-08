@@ -1,9 +1,11 @@
-﻿using FluentValidation;
+﻿using Api.Exceptions;
+using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using System.Text.Json;
+
 namespace Api.Extensions
 {
     internal static class ExceptionHandlerExtensions
@@ -22,6 +24,7 @@ namespace Api.Extensions
                 {
                     BadHttpRequestException => (int)HttpStatusCode.BadRequest,
                     ValidationException => (int)HttpStatusCode.BadRequest,
+                    NoSecretsFoundException => (int)HttpStatusCode.NotFound,
                     _ => (int)HttpStatusCode.InternalServerError,
                 };
 
@@ -39,7 +42,8 @@ namespace Api.Extensions
 
             var detail = exception switch
             {
-                BadHttpRequestException { InnerException: JsonException jsonEx } => exception.Message + " " + jsonEx.Message,
+                BadHttpRequestException { InnerException: JsonException jsonEx } =>
+                    string.JoinNonEmpty(exception.Message, jsonEx.Message, jsonEx.InnerException?.Message),
                 BadHttpRequestException => exception.Message,
                 _ when isInternalServerError && !isDevelopment => "Internal server error. Please contact the API support.",
                 _ when isValidationException => "One or more validation errors occurred.",
@@ -56,7 +60,9 @@ namespace Api.Extensions
             var problemDetails = new ProblemDetails
             {
                 Type = typeUri,
-                Title = isInternalServerError && !isDevelopment ? "InternalServerError" : exception.GetType().GetNameWithoutGenericArity(),
+                Title = isInternalServerError && !isDevelopment
+                    ? "InternalServerError"
+                    : exception.GetType().GetNameWithoutGenericArity(),
                 Detail = detail,
                 Status = httpContext.Response.StatusCode,
                 Instance = httpContext.Request.Path,
