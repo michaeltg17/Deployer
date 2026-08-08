@@ -8,7 +8,6 @@ namespace Core.Testing.Serializers
 {
     public class TestCaseSerializer : IXunitSerializer
     {
-        static readonly ConcurrentDictionary<Type, FieldInfo[]> FieldCache = new();
         static readonly ConcurrentDictionary<string, Type> TypeCache = new();
 
         public bool IsSerializable(Type type, object? value, out string? reason)
@@ -20,13 +19,20 @@ namespace Core.Testing.Serializers
         public string Serialize(object value)
         {
             var type = value.GetType();
-            var fields = FieldCache.GetOrAdd(type, t => t.GetFields(BindingFlags.Public | BindingFlags.Instance));
+            var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                .Where(f => !f.IsLiteral).ToArray();
+            var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.CanWrite).ToArray();
             var entries = new List<Dictionary<string, string?>>();
 
             foreach (var field in fields)
             {
-                var fieldVal = field.GetValue(value);
-                entries.Add(ToJsonEntry(field.FieldType, fieldVal));
+                entries.Add(ToJsonEntry(field.FieldType, field.GetValue(value)));
+            }
+
+            foreach (var prop in properties)
+            {
+                entries.Add(ToJsonEntry(prop.PropertyType, prop.GetValue(value)));
             }
 
             return JsonSerializer.Serialize(entries);
@@ -34,18 +40,36 @@ namespace Core.Testing.Serializers
 
         public object Deserialize(Type type, string data)
         {
-            var fields = FieldCache.GetOrAdd(type, t => t.GetFields(BindingFlags.Public | BindingFlags.Instance));
+            var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                .Where(f => !f.IsLiteral).ToArray();
+            var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
+                .Where(p => p.CanWrite).ToArray();
             var elements = JsonSerializer.Deserialize<JsonElement>(data).EnumerateArray().ToList();
-            var instance = RuntimeHelpers.GetUninitializedObject(type);
+            var instance = CreateInstance(type);
 
-            for (int i = 0; i < fields.Length; i++)
+            int idx = 0;
+            foreach (var field in fields)
             {
-                var entry = ToDictionary(elements[i]);
-                var value = FromJsonEntry(fields[i].FieldType, entry);
-                fields[i].SetValue(instance, value);
+                var entry = ToDictionary(elements[idx]);
+                field.SetValue(instance, FromJsonEntry(field.FieldType, entry));
+                idx++;
+            }
+
+            foreach (var prop in properties)
+            {
+                var entry = ToDictionary(elements[idx]);
+                prop.SetValue(instance, FromJsonEntry(prop.PropertyType, entry));
+                idx++;
             }
 
             return instance;
+        }
+
+        static object CreateInstance(Type type)
+        {
+            // Prefer public constructor if available, fall back to uninitialized
+            var ctor = type.GetConstructor(Type.EmptyTypes);
+            return ctor != null ? Activator.CreateInstance(type) : RuntimeHelpers.GetUninitializedObject(type);
         }
 
         static Dictionary<string, string?> ToJsonEntry(Type type, object? value)
