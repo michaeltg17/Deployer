@@ -35,29 +35,24 @@ public sealed class DeployRequestValidatorTests : IDisposable
 
     public void Dispose() => Directory.Delete(tempDir, true);
 
-    public static readonly TheoryDataRow<string, object?, string>[] InvalidCases =
+    public static readonly TheoryDataRow<DeployRequest, string, string>[] InvalidCases =
     [
-        new(nameof(DeployRequest.Project), null, "'Project' must not be empty.") { TestDisplayName = "Invalid: Project null" },
-        new(nameof(DeployRequest.Project), "", "'Project' must not be empty.") { TestDisplayName = "Invalid: Project empty" },
-        new(nameof(DeployRequest.Project), " ", "'Project' must not be empty.") { TestDisplayName = "Invalid: Project whitespace" },
-        new(nameof(DeployRequest.Project), "nonexistent", "Docker compose file not found for project 'nonexistent': docker-compose.yml") { TestDisplayName = "Invalid: Missing compose file" },
-        new(nameof(DeployRequest.Environment), null, "'Environment' must not be empty.") { TestDisplayName = "Invalid: Environment null" },
-        new(nameof(DeployRequest.Environment), "", "'Environment' must not be empty.") { TestDisplayName = "Invalid: Environment empty" },
-        new(nameof(DeployRequest.Environment), "   ", "'Environment' must not be empty.") { TestDisplayName = "Invalid: Environment whitespace" },
-        new(nameof(DeployRequest.Tag), null, "'Tag' must not be empty.") { TestDisplayName = "Invalid: Tag null" },
-        new(nameof(DeployRequest.Tag), "", "'Tag' must not be empty.") { TestDisplayName = "Invalid: Tag empty" },
-        new(nameof(DeployRequest.Tag), "   ", "'Tag' must not be empty.") { TestDisplayName = "Invalid: Tag whitespace" },
+        new(new DeployRequestBuilder().WithValues(r => r.Project = null).Build(), nameof(DeployRequest.Project), "'Project' must not be empty.") { TestDisplayName = "Invalid: Project null" },
+        new(new DeployRequestBuilder().WithValues(r => r.Project = "").Build(), nameof(DeployRequest.Project), "'Project' must not be empty.") { TestDisplayName = "Invalid: Project empty" },
+        new(new DeployRequestBuilder().WithValues(r => r.Project = " ").Build(), nameof(DeployRequest.Project), "'Project' must not be empty.") { TestDisplayName = "Invalid: Project whitespace" },
+        new(new DeployRequestBuilder().WithValues(r => r.Project = "nonexistent").Build(), nameof(DeployRequest.Project), "Docker compose file not found for project 'nonexistent': docker-compose.yml") { TestDisplayName = "Invalid: Missing compose file" },
+        new(new DeployRequestBuilder().WithValues(r => r.Environment = null).Build(), nameof(DeployRequest.Environment), "'Environment' must not be empty.") { TestDisplayName = "Invalid: Environment null" },
+        new(new DeployRequestBuilder().WithValues(r => r.Environment = "").Build(), nameof(DeployRequest.Environment), "'Environment' must not be empty.") { TestDisplayName = "Invalid: Environment empty" },
+        new(new DeployRequestBuilder().WithValues(r => r.Environment = "   ").Build(), nameof(DeployRequest.Environment), "'Environment' must not be empty.") { TestDisplayName = "Invalid: Environment whitespace" },
+        new(new DeployRequestBuilder().WithValues(r => r.Tag = null).Build(), nameof(DeployRequest.Tag), "'Tag' must not be empty.") { TestDisplayName = "Invalid: Tag null" },
+        new(new DeployRequestBuilder().WithValues(r => r.Tag = "").Build(), nameof(DeployRequest.Tag), "'Tag' must not be empty.") { TestDisplayName = "Invalid: Tag empty" },
+        new(new DeployRequestBuilder().WithValues(r => r.Tag = "   ").Build(), nameof(DeployRequest.Tag), "'Tag' must not be empty.") { TestDisplayName = "Invalid: Tag whitespace" },
     ];
 
     [Theory]
     [MemberData(nameof(InvalidCases))]
-    public void InvalidProperty_Error(string property, object? value, string expectedMessage)
+    public void InvalidProperty_Error(DeployRequest request, string property, string expectedMessage)
     {
-        //Given
-        var request = new DeployRequestBuilder()
-            .WithValue(property, value)
-            .Build();
-
         //When
         var result = validator.TestValidate(request);
 
