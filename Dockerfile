@@ -11,6 +11,7 @@ COPY src/ApiClient/ApiClient.csproj src/ApiClient/
 COPY tests/Core.Testing/Core.Testing.csproj tests/Core.Testing/
 COPY tests/EndToEndTests/EndToEndTests.csproj tests/EndToEndTests/
 COPY tests/IntegrationTests/IntegrationTests.csproj tests/IntegrationTests/
+COPY tests/UnitTests/UnitTests.csproj tests/UnitTests/
 RUN dotnet restore Deployer.slnx
 
 # Layer 2: Copy full source and publish (invalidated on code change)
