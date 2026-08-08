@@ -1,19 +1,17 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 
-namespace Core.Testing
+namespace Core.Testing.Validators
 {
-    public static partial class TraceIdAssertions
+    public static partial class TraceIdValidator
     {
-        static readonly Regex TraceIdRegex = TraceIdRegexValidator();
-
         [SuppressMessage("Style", "IDE0046:Convert to conditional expression", Justification = "Clearer")]
-        public static bool Assert(string traceId)
+        public static bool IsValid(string traceId)
         {
             if (string.IsNullOrWhiteSpace(traceId))
                 return false;
 
-            var match = TraceIdRegex.Match(traceId);
+            var match = TraceIdRegex().Match(traceId);
             if (!match.Success)
                 return false;
 
@@ -36,10 +34,7 @@ namespace Core.Testing
             return true;
         }
 
-        [GeneratedRegex(
-            @"^(?<version>[0-9a-f]{2})-(?<traceId>[0-9a-f]{32})-(?<parentId>[0-9a-f]{16})-(?<flags>[0-9a-f]{2})$",
-            RegexOptions.IgnoreCase | RegexOptions.Compiled,
-            "en-US")]
-        private static partial Regex TraceIdRegexValidator();
+        [GeneratedRegex(@"^(?<version>[0-9a-f]{2})-(?<traceId>[0-9a-f]{32})-(?<parentId>[0-9a-f]{16})-(?<flags>[0-9a-f]{2})$")]
+        private static partial Regex TraceIdRegex();
     }
 }

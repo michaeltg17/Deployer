@@ -7,6 +7,7 @@ using Core.Testing.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using System.Net;
 using ApiClient.Extensions;
+using Core.Testing.Validators;
 
 namespace IntegrationTests.Tests.ApiBehaviourTests
 {
@@ -73,7 +74,7 @@ namespace IntegrationTests.Tests.ApiBehaviourTests
 
             //Then
             var problemDetails = await response.To<ProblemDetails>();
-            TraceIdAssertions.Assert(problemDetails.TraceId!).Should().BeTrue();
+            TraceIdValidator.IsValid(problemDetails.TraceId!).Should().BeTrue();
 
             var expected = new ProblemDetailsBuilder()
                 .WithTraceId(problemDetails.TraceId!)
