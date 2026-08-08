@@ -9,5 +9,11 @@
             action(Item);
             return (TBuilder)this;
         }
+
+        public TBuilder WithValue(string propertyName, object? value)
+        {
+            typeof(TEntity).GetProperty(propertyName)!.SetValue(Item, value);
+            return (TBuilder)this;
+        }
     }
 }

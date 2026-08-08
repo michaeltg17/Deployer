@@ -35,55 +35,44 @@ public sealed class DeployRequestValidatorTests : IDisposable
 
     public void Dispose() => Directory.Delete(tempDir, true);
 
+    public sealed record InvalidTestCase(string Property, object? Value, string ExpectedMessage)
+    {
+        public string TestDisplayName { get; init } = $"{Property} - {Value switch { null => "null", "" => "\"\"", { } v => $@"""{v}"" }}" }";
+    }
+
+    public static readonly InvalidTestCase[] InvalidCases =
+    [
+        new(nameof(DeployRequest.Project), null, "'Project' must not be empty."),
+        new(nameof(DeployRequest.Project), "", "'Project' must not be empty."),
+        new(nameof(DeployRequest.Project), " ", "'Project' must not be empty."),
+        new(nameof(DeployRequest.Project), "nonexistent", "Docker compose file not found for project 'nonexistent': docker-compose.yml"),
+        new(nameof(DeployRequest.Environment), null, "'Environment' must not be empty."),
+        new(nameof(DeployRequest.Environment), "", "'Environment' must not be empty."),
+        new(nameof(DeployRequest.Environment), "   ", "'Environment' must not be empty."),
+        new(nameof(DeployRequest.Tag), null, "'Tag' must not be empty."),
+        new(nameof(DeployRequest.Tag), "", "'Tag' must not be empty."),
+        new(nameof(DeployRequest.Tag), "   ", "'Tag' must not be empty."),
+    ];
+
     [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData(" ")]
-    [InlineData("nonexistent", "Docker compose file not found for project 'nonexistent': docker-compose.yml")]
-    public void InvalidProject_Error(string? project, string? expectedMessage = "'Project' must not be empty.")
+    [MemberData(nameof(InvalidCases))]
+    public void InvalidProperty_Error(InvalidTestCase testCase)
     {
         //Given
-        var request = new DeployRequestBuilder().WithValues(r => r.Project = project).Build();
+        var request = new DeployRequestBuilder().WithValues(r =>
+        {
+            if (testCase.Property == nameof(DeployRequest.Project)) r.Project = (string?)testCase.Value;
+            else if (testCase.Property == nameof(DeployRequest.Environment)) r.Environment = (string?)testCase.Value;
+            else r.Tag = (string?)testCase.Value;
+        }).Build();
 
         //When
         var result = validator.TestValidate(request);
 
         //Then
-        result.ShouldHaveValidationErrorFor(r => r.Project)
-            .WithErrorMessage(expectedMessage)
+        result.ShouldHaveValidationErrorFor(testCase.Property)
+            .WithErrorMessage(testCase.ExpectedMessage)
             .Only();
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void InvalidEnvironment_Error(string? environment)
-    {
-        //Given
-        var request = new DeployRequestBuilder().WithValues(r => r.Environment = environment).Build();
-
-        //When
-        var result = validator.TestValidate(request);
-
-        //Then
-        result.ShouldHaveValidationErrorFor(r => r.Environment).WithErrorMessage("'Environment' must not be empty.").Only();
-    }
-
-    [Theory]
-    [InlineData(null)]
-    [InlineData("")]
-    [InlineData("   ")]
-    public void InvalidTag_Error(string? tag)
-    {
-        //Given
-        var request = new DeployRequestBuilder().WithValues(r => r.Tag = tag).Build();
-
-        //When
-        var result = validator.TestValidate(request);
-
-        //Then
-        result.ShouldHaveValidationErrorFor(r => r.Tag).WithErrorMessage("'Tag' must not be empty.").Only();
     }
 
     [Fact]
