@@ -79,6 +79,32 @@ namespace Core.Testing.Serializers
 
             var typeQn = type.AssemblyQualifiedName ?? type.FullName!;
             TypeCache.TryAdd(typeQn, type);
+
+            // Array of ValueTuple: hand-serialize each element as object
+            if (type.IsArray && IsValueTuple(type.GetElementType()!))
+            {
+                var arr = (Array)value;
+                var elems = new List<string>();
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    var elem = arr.GetValue(i)!;
+                    var dict = new Dictionary<string, object?>();
+                    foreach (var f in type.GetElementType()!.GetFields(BindingFlags.Public | BindingFlags.Instance))
+                        dict[f.Name] = f.GetValue(elem);
+                    elems.Add(JsonSerializer.Serialize(dict));
+                }
+                return new() { { "t", typeQn }, { "v", "[" + string.Join(",", elems) + "]" } };
+            }
+
+            // ValueTuple: serialize as object with Item1, Item2, ...
+            if (IsValueTuple(type))
+            {
+                var dict = new Dictionary<string, object?>();
+                foreach (var f in type.GetFields(BindingFlags.Public | BindingFlags.Instance))
+                    dict[f.Name] = f.GetValue(value);
+                return new() { { "t", typeQn }, { "v", JsonSerializer.Serialize(dict) } };
+            }
+
             return new() { { "t", typeQn }, { "v", JsonSerializer.Serialize(value) } };
         }
 
@@ -90,7 +116,7 @@ namespace Core.Testing.Serializers
             return dict;
         }
 
-        static object? FromJsonEntry(Type target, Dictionary<string, string?> entry)
+        static object? FromJsonEntry(Type _target, Dictionary<string, string?> entry)
         {
             var typeTag = entry["t"]!;
 
@@ -98,7 +124,36 @@ namespace Core.Testing.Serializers
                 return null;
 
             var resolved = TypeCache.GetOrAdd(typeTag, n => Type.GetType(n)!);
+
+            // Array of ValueTuple: deserialize each element manually
+            if (resolved.IsArray && IsValueTuple(resolved.GetElementType()!))
+            {
+                var elemType = resolved.GetElementType()!;
+                var elements = JsonSerializer.Deserialize<JsonElement>(entry["v"]!).EnumerateArray().ToList();
+                var array = Array.CreateInstance(elemType, elements.Count);
+                for (int i = 0; i < elements.Count; i++)
+                    array.SetValue(DeserializeValueTuple(elemType, elements[i]), i);
+                return array;
+            }
+
+            // Single ValueTuple: construct manually
+            if (IsValueTuple(resolved))
+            {
+                return DeserializeValueTuple(resolved, JsonSerializer.Deserialize<JsonElement>(entry["v"]!));
+            }
+
             return JsonSerializer.Deserialize(entry["v"]!, resolved)!;
         }
+
+        static object DeserializeValueTuple(Type type, JsonElement value)
+        {
+            var dict = value.EnumerateObject().ToDictionary(k => k.Name, v => v.Value);
+            var fields = type.GetFields(BindingFlags.Public | BindingFlags.Instance)
+                .OrderBy(f => f.Name).ToList();
+            var vals = fields.Select(f => JsonSerializer.Deserialize(dict[f.Name].GetRawText(), f.FieldType)!).ToArray();
+            return Activator.CreateInstance(type, vals)!;
+        }
+
+        static bool IsValueTuple(Type type) => type.Namespace == "System" && type.Name.StartsWith("ValueTuple`");
     }
 }
