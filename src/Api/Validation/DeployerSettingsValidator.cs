@@ -7,7 +7,8 @@ public sealed class DeployerSettingsValidator : IValidateOptions<DeployerSetting
 {
     public ValidateOptionsResult Validate(string? name, DeployerSettings options)
     {
-        ArgumentNullException.ThrowIfNull(options);
+        if (options is null)
+            return ValidateOptionsResult.Fail("DeployerSettings must not be null");
 
         var errors = new List<string>();
 

@@ -75,6 +75,11 @@ public sealed class DeployerSettingsValidatorTests
                 "The 'KeePassDbPassword' setting is required"
             ]
         }) { TestDisplayName = "Invalid: all null multiple errors" },
+        new(new TestCase
+        {
+            Settings = null!,
+            ExpectedErrors = ["DeployerSettings must not be null"]
+        }) { TestDisplayName = "Invalid: null options" },
     ];
 
     [Theory]
@@ -97,12 +102,5 @@ public sealed class DeployerSettingsValidatorTests
             foreach (var message in errors)
                 result.Failures.Should().Contain(message);
         }
-    }
-
-    [Fact]
-    public void NullOptions_ThrowsArgumentNullException()
-    {
-        Action action = () => validator.Validate(null, null!);
-        action.Should().Throw<ArgumentNullException>();
     }
 }
