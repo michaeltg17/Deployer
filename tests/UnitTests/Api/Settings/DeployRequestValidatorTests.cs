@@ -37,16 +37,16 @@ public sealed class DeployRequestValidatorTests : IDisposable
 
     public static readonly TheoryDataRow<string, object?, string>[] InvalidCases =
     [
-        new(nameof(DeployRequest.Project), null, "'Project' must not be empty.") { TestDisplayName = "InvalidProject - null" },
-        new(nameof(DeployRequest.Project), "", "'Project' must not be empty.") { TestDisplayName = "InvalidProject - empty" },
-        new(nameof(DeployRequest.Project), " ", "'Project' must not be empty.") { TestDisplayName = "InvalidProject - whitespace" },
-        new(nameof(DeployRequest.Project), "nonexistent", "Docker compose file not found for project 'nonexistent': docker-compose.yml") { TestDisplayName = "InvalidProject - nonexistent - Missing compose file" },
-        new(nameof(DeployRequest.Environment), null, "'Environment' must not be empty.") { TestDisplayName = "InvalidEnvironment - null" },
-        new(nameof(DeployRequest.Environment), "", "'Environment' must not be empty.") { TestDisplayName = "InvalidEnvironment - empty" },
-        new(nameof(DeployRequest.Environment), "   ", "'Environment' must not be empty.") { TestDisplayName = "InvalidEnvironment - whitespace" },
-        new(nameof(DeployRequest.Tag), null, "'Tag' must not be empty.") { TestDisplayName = "InvalidTag - null" },
-        new(nameof(DeployRequest.Tag), "", "'Tag' must not be empty.") { TestDisplayName = "InvalidTag - empty" },
-        new(nameof(DeployRequest.Tag), "   ", "'Tag' must not be empty.") { TestDisplayName = "InvalidTag - whitespace" },
+        new(nameof(DeployRequest.Project), null, "'Project' must not be empty.") { TestDisplayName = "Invalid: Project null" },
+        new(nameof(DeployRequest.Project), "", "'Project' must not be empty.") { TestDisplayName = "Invalid: Project empty" },
+        new(nameof(DeployRequest.Project), " ", "'Project' must not be empty.") { TestDisplayName = "Invalid: Project whitespace" },
+        new(nameof(DeployRequest.Project), "nonexistent", "Docker compose file not found for project 'nonexistent': docker-compose.yml") { TestDisplayName = "Invalid: Missing compose file" },
+        new(nameof(DeployRequest.Environment), null, "'Environment' must not be empty.") { TestDisplayName = "Invalid: Environment null" },
+        new(nameof(DeployRequest.Environment), "", "'Environment' must not be empty.") { TestDisplayName = "Invalid: Environment empty" },
+        new(nameof(DeployRequest.Environment), "   ", "'Environment' must not be empty.") { TestDisplayName = "Invalid: Environment whitespace" },
+        new(nameof(DeployRequest.Tag), null, "'Tag' must not be empty.") { TestDisplayName = "Invalid: Tag null" },
+        new(nameof(DeployRequest.Tag), "", "'Tag' must not be empty.") { TestDisplayName = "Invalid: Tag empty" },
+        new(nameof(DeployRequest.Tag), "   ", "'Tag' must not be empty.") { TestDisplayName = "Invalid: Tag whitespace" },
     ];
 
     [Theory]
