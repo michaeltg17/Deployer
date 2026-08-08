@@ -37,7 +37,7 @@ public sealed class DeployRequestValidatorTests : IDisposable
 
     public sealed record InvalidTestCase(string Property, object? Value, string ExpectedMessage)
     {
-        public string TestDisplayName { get; init } = $"{Property} - {Value switch { null => "null", "" => "\"\"", { } v => $@"""{v}"" }}" }";
+        public string TestDisplayName { get; init } = $"Invalid{Property} - {(Value == null ? "null" : Value)}";
     }
 
     public static readonly InvalidTestCase[] InvalidCases =
@@ -59,12 +59,9 @@ public sealed class DeployRequestValidatorTests : IDisposable
     public void InvalidProperty_Error(InvalidTestCase testCase)
     {
         //Given
-        var request = new DeployRequestBuilder().WithValues(r =>
-        {
-            if (testCase.Property == nameof(DeployRequest.Project)) r.Project = (string?)testCase.Value;
-            else if (testCase.Property == nameof(DeployRequest.Environment)) r.Environment = (string?)testCase.Value;
-            else r.Tag = (string?)testCase.Value;
-        }).Build();
+        var request = new DeployRequestBuilder()
+            .WithValue(testCase.Property, testCase.Value)
+            .Build();
 
         //When
         var result = validator.TestValidate(request);
