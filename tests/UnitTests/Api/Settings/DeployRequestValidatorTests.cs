@@ -35,24 +35,25 @@ public sealed class DeployRequestValidatorTests : IDisposable
 
     public void Dispose() => Directory.Delete(tempDir, true);
 
-    public static readonly TheoryDataRow<DeployRequest, string, string, bool>[] TestCases =
+    public static readonly TheoryDataRow<DeployRequest, (string Property, string Message)[]?, bool>[] TestCases =
     [
-        new(new DeployRequestBuilder().Build(), "", "", true) { TestDisplayName = "Valid" },
-        new(new DeployRequestBuilder().WithValues(r => r.Project = null).Build(), nameof(DeployRequest.Project), "'Project' must not be empty.", false) { TestDisplayName = "Invalid: Project null" },
-        new(new DeployRequestBuilder().WithValues(r => r.Project = "").Build(), nameof(DeployRequest.Project), "'Project' must not be empty.", false) { TestDisplayName = "Invalid: Project empty" },
-        new(new DeployRequestBuilder().WithValues(r => r.Project = " ").Build(), nameof(DeployRequest.Project), "'Project' must not be empty.", false) { TestDisplayName = "Invalid: Project whitespace" },
-        new(new DeployRequestBuilder().WithValues(r => r.Project = "nonexistent").Build(), nameof(DeployRequest.Project), "Docker compose file not found for project 'nonexistent': docker-compose.yml", false) { TestDisplayName = "Invalid: Missing compose file" },
-        new(new DeployRequestBuilder().WithValues(r => r.Environment = null).Build(), nameof(DeployRequest.Environment), "'Environment' must not be empty.", false) { TestDisplayName = "Invalid: Environment null" },
-        new(new DeployRequestBuilder().WithValues(r => r.Environment = "").Build(), nameof(DeployRequest.Environment), "'Environment' must not be empty.", false) { TestDisplayName = "Invalid: Environment empty" },
-        new(new DeployRequestBuilder().WithValues(r => r.Environment = "   ").Build(), nameof(DeployRequest.Environment), "'Environment' must not be empty.", false) { TestDisplayName = "Invalid: Environment whitespace" },
-        new(new DeployRequestBuilder().WithValues(r => r.Tag = null).Build(), nameof(DeployRequest.Tag), "'Tag' must not be empty.", false) { TestDisplayName = "Invalid: Tag null" },
-        new(new DeployRequestBuilder().WithValues(r => r.Tag = "").Build(), nameof(DeployRequest.Tag), "'Tag' must not be empty.", false) { TestDisplayName = "Invalid: Tag empty" },
-        new(new DeployRequestBuilder().WithValues(r => r.Tag = "   ").Build(), nameof(DeployRequest.Tag), "'Tag' must not be empty.", false) { TestDisplayName = "Invalid: Tag whitespace" },
+        new(new DeployRequestBuilder().Build(), null, true) { TestDisplayName = "Valid" },
+        new(new DeployRequestBuilder().WithValues(r => r.Project = null).Build(), [(nameof(DeployRequest.Project), "'Project' must not be empty.")], false) { TestDisplayName = "Invalid: Project null" },
+        new(new DeployRequestBuilder().WithValues(r => r.Project = "").Build(), [(nameof(DeployRequest.Project), "'Project' must not be empty.")], false) { TestDisplayName = "Invalid: Project empty" },
+        new(new DeployRequestBuilder().WithValues(r => r.Project = " ").Build(), [(nameof(DeployRequest.Project), "'Project' must not be empty.")], false) { TestDisplayName = "Invalid: Project whitespace" },
+        new(new DeployRequestBuilder().WithValues(r => r.Project = "nonexistent").Build(), [(nameof(DeployRequest.Project), "Docker compose file not found for project 'nonexistent': docker-compose.yml")], false) { TestDisplayName = "Invalid: Missing compose file" },
+        new(new DeployRequestBuilder().WithValues(r => r.Environment = null).Build(), [(nameof(DeployRequest.Environment), "'Environment' must not be empty.")], false) { TestDisplayName = "Invalid: Environment null" },
+        new(new DeployRequestBuilder().WithValues(r => r.Environment = "").Build(), [(nameof(DeployRequest.Environment), "'Environment' must not be empty.")], false) { TestDisplayName = "Invalid: Environment empty" },
+        new(new DeployRequestBuilder().WithValues(r => r.Environment = "   ").Build(), [(nameof(DeployRequest.Environment), "'Environment' must not be empty.")], false) { TestDisplayName = "Invalid: Environment whitespace" },
+        new(new DeployRequestBuilder().WithValues(r => r.Tag = null).Build(), [(nameof(DeployRequest.Tag), "'Tag' must not be empty.")], false) { TestDisplayName = "Invalid: Tag null" },
+        new(new DeployRequestBuilder().WithValues(r => r.Tag = "").Build(), [(nameof(DeployRequest.Tag), "'Tag' must not be empty.")], false) { TestDisplayName = "Invalid: Tag empty" },
+        new(new DeployRequestBuilder().WithValues(r => r.Tag = "   ").Build(), [(nameof(DeployRequest.Tag), "'Tag' must not be empty.")], false) { TestDisplayName = "Invalid: Tag whitespace" },
+        new(new DeployRequest(), [(nameof(DeployRequest.Project), "'Project' must not be empty."), (nameof(DeployRequest.Environment), "'Environment' must not be empty."), (nameof(DeployRequest.Tag), "'Tag' must not be empty.")], false) { TestDisplayName = "AllNull: Multiple errors" },
     ];
 
     [Theory]
     [MemberData(nameof(TestCases))]
-    public void Cases(DeployRequest request, string property, string expectedMessage, bool isValid)
+    public void Cases(DeployRequest request, (string Property, string Message)[]? expectedErrors, bool isValid)
     {
         //When
         var result = validator.TestValidate(request);
@@ -61,21 +62,14 @@ public sealed class DeployRequestValidatorTests : IDisposable
         if (isValid)
             result.ShouldNotHaveAnyValidationErrors();
         else
-            result.ShouldHaveValidationErrorFor(property)
-                .WithErrorMessage(expectedMessage)
-                .Only();
-    }
-
-    [Fact]
-    public void AllNull_MultipleErrors()
-    {
-        //When
-        var result = validator.TestValidate(new DeployRequest());
-
-        //Then
-        result.Errors.Should().HaveCount(3);
-        result.ShouldHaveValidationErrorFor(r => r.Project).WithErrorMessage("'Project' must not be empty.");
-        result.ShouldHaveValidationErrorFor(r => r.Environment).WithErrorMessage("'Environment' must not be empty.");
-        result.ShouldHaveValidationErrorFor(r => r.Tag).WithErrorMessage("'Tag' must not be empty.");
+        {
+            result.Errors.Should().HaveCount(expectedErrors!.Length);
+            foreach (var (property, message) in expectedErrors)
+            {
+                var assertion = result.ShouldHaveValidationErrorFor(property).WithErrorMessage(message);
+                if (expectedErrors.Length == 1)
+                    assertion.Only();
+            }
+        }
     }
 }
