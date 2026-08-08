@@ -4,17 +4,12 @@ namespace Core.Testing.Validators
 {
     public static partial class ExceptionValidator
     {
-        static readonly Regex TypeMessageRegex = TypeMessageRegexValidator();
-        static readonly Regex StackFrameRegex = StackFrameRegexValidator();
-        static readonly Regex SourceLocationRegex = SourceLocationRegexValidator();
-        static readonly Regex CompilerGeneratedRegex = CompilerGeneratedRegexValidator();
-
         public static bool IsValid(string exceptionText)
         {
             if (string.IsNullOrWhiteSpace(exceptionText))
                 return false;
 
-            if (!TypeMessageRegex.IsMatch(exceptionText))
+            if (!TypeMessageRegex().IsMatch(exceptionText))
                 return false;
 
             var lines = exceptionText.Split('\n');
@@ -23,10 +18,10 @@ namespace Core.Testing.Validators
 
             for (int i = 1; i < lines.Length; i++)
             {
-                if (StackFrameRegex.IsMatch(lines[i]))
+                if (StackFrameRegex().IsMatch(lines[i]))
                 {
                     hasStackFrame = true;
-                    if (SourceLocationRegex.IsMatch(lines[i]) || CompilerGeneratedRegex.IsMatch(lines[i]))
+                    if (SourceLocationRegex().IsMatch(lines[i]) || CompilerGeneratedRegex().IsMatch(lines[i]))
                         hasSourceOrLambda = true;
                 }
             }
@@ -34,28 +29,16 @@ namespace Core.Testing.Validators
             return hasStackFrame && hasSourceOrLambda;
         }
 
-        [GeneratedRegex(
-            @"^(?<type>[a-zA-Z][\w.]+):\s+(?<message>.+)$",
-            RegexOptions.Multiline | RegexOptions.Compiled,
-            "en-US")]
-        private static partial Regex TypeMessageRegexValidator();
+        [GeneratedRegex(@"^(?<type>[a-zA-Z][\w.]+):\s+(?<message>.+)$", RegexOptions.Multiline)]
+        private static partial Regex TypeMessageRegex();
 
-        [GeneratedRegex(
-            @"^\s+at\s+",
-            RegexOptions.Compiled,
-            "en-US")]
-        private static partial Regex StackFrameRegexValidator();
+        [GeneratedRegex(@"^\s+at\s+")]
+        private static partial Regex StackFrameRegex();
 
-        [GeneratedRegex(
-            @"in\s+\S+\.cs:line\s+\d+",
-            RegexOptions.Compiled,
-            "en-US")]
-        private static partial Regex SourceLocationRegexValidator();
+        [GeneratedRegex(@"in\s+\S+\.cs:line\s+\d+")]
+        private static partial Regex SourceLocationRegex();
 
-        [GeneratedRegex(
-            @"(<|lambda_)",
-            RegexOptions.Compiled,
-            "en-US")]
-        private static partial Regex CompilerGeneratedRegexValidator();
+        [GeneratedRegex(@"(<|lambda_)")]
+        private static partial Regex CompilerGeneratedRegex();
     }
 }

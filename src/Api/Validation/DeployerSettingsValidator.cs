@@ -1,13 +1,14 @@
 using Microsoft.Extensions.Options;
-using Api.Models;
+using Api.Settings;
 
 namespace Api.Validation;
 
-internal sealed class DeployerSettingsValidator : IValidateOptions<DeployerSettings>
+public sealed class DeployerSettingsValidator : IValidateOptions<DeployerSettings>
 {
     public ValidateOptionsResult Validate(string? name, DeployerSettings options)
     {
-        ArgumentNullException.ThrowIfNull(options);
+        if (options is null)
+            return ValidateOptionsResult.Fail("DeployerSettings must not be null");
 
         var errors = new List<string>();
 

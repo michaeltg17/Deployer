@@ -1,5 +1,6 @@
 using Api.Models;
-using Docker.DotNet.Models;
+using ApiClient.Validators;
+using Core.Testing.Assertions;
 using Xunit;
 using static AwesomeAssertions.AssertionExtensions;
 
@@ -8,24 +9,21 @@ namespace IntegrationTests.Tests;
 public sealed class DeployTests : Test
 {
     [Fact]
-    public async Task MissingProject_Returns400()
+    public async Task RequestMissingFields_ExpectedProblemDetails()
     {
-        var response = await ApiClient.Deploy(new DeployRequest { Environment = "dev", Tag = "v1.0.0" });
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
-    }
+        //When
+        var response = await ApiClient.Deploy(new DeployRequest());
 
-    [Fact]
-    public async Task MissingEnvironment_Returns400()
-    {
-        var response = await ApiClient.Deploy(new DeployRequest { Project = "test", Tag = "v1.0.0" });
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
-    }
-
-    [Fact]
-    public async Task MissingTag_Returns400()
-    {
-        var response = await ApiClient.Deploy(new DeployRequest { Project = "test", Environment = "dev" });
-        response.StatusCode.Should().Be(System.Net.HttpStatusCode.BadRequest);
+        //Then
+        await ProblemDetailsAssertions.AssertValidationException(
+            response,
+            "/",
+            new Dictionary<string, string[]>
+            {
+                { "project", ["'project' must not be empty."] },
+                { "environment", ["'environment' must not be empty."] },
+                { "tag", ["'tag' must not be empty."] }
+            });
     }
 
     [Fact]
@@ -84,8 +82,7 @@ public sealed class DeployTests : Test
         });
         response.StatusCode.Should().Be(System.Net.HttpStatusCode.OK);
 
-        var containers = await DockerClient.Containers.ListContainersAsync(
-            new ContainersListParameters { All = true });
+        var containers = await GetContainers();
         var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{containerName}"));
         container.Should().NotBeNull();
         container.Image.Should().Be(expectedImage);
@@ -95,17 +92,5 @@ public sealed class DeployTests : Test
         inspect.Config.Env.Should().Contain("COMMON=COMMON_VALUE");
         inspect.Config.Env.Should().Contain("SECRET=SECRET_DEV");
         await StopAndRemoveContainer(containerName);
-    }
-
-    async Task StopAndRemoveContainer(string name)
-    {
-        var containers = await DockerClient.Containers.ListContainersAsync(
-            new ContainersListParameters { All = true });
-        var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{name}"));
-        if (container == null)
-            return;
-
-        await DockerClient.Containers.StopContainerAsync(container.ID, new ContainerStopParameters());
-        await DockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true });
     }
 }

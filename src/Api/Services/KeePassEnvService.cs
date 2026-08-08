@@ -1,5 +1,5 @@
 using Api.Exceptions;
-using Api.Models;
+using Api.Settings;
 
 namespace Api.Services;
 

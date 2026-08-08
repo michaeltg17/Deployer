@@ -1,5 +1,6 @@
 using Api.Exceptions;
 using Api.Models;
+using Api.Settings;
 using FluentValidation;
 
 namespace Api.Services;

@@ -20,9 +20,6 @@ namespace Api.Endpoints
         }
 
         [SuppressMessage("Design", "CA1034:Nested types should not be visible", Justification = "Test")]
-        public class PostRequest
-        {
-            public long Id2 { get; set; }
-        }
+        public record PostRequest(long Id2);
     }
 }

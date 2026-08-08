@@ -1,4 +1,5 @@
 ﻿using Docker.DotNet;
+using Docker.DotNet.Models;
 using Serilog;
 using Xunit;
 
@@ -31,6 +32,22 @@ namespace IntegrationTests
         public ValueTask InitializeAsync()
         {
             return ValueTask.CompletedTask;
+        }
+
+        public async Task StopAndRemoveContainer(string name)
+        {
+            var containers = await GetContainers();
+            var container = containers.FirstOrDefault(c => c.Names.Any(n => n == $"/{name}"));
+            if (container == null)
+                return;
+
+            await DockerClient.Containers.StopContainerAsync(container.ID, new ContainerStopParameters());
+            await DockerClient.Containers.RemoveContainerAsync(container.ID, new ContainerRemoveParameters { Force = true });
+        }
+
+        public async Task<IList<ContainerListResponse>> GetContainers()
+        {
+            return await DockerClient.Containers.ListContainersAsync(new ContainersListParameters { All = true });
         }
     }
 }

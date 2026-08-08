@@ -4,6 +4,7 @@ using ApiClient.Extensions;
 using ApiClient.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Core.Testing.Extensions;
+using Api.Models;
 using Core.Testing.Validators;
 
 namespace IntegrationTests.Tests.ApiClient
@@ -33,7 +34,7 @@ namespace IntegrationTests.Tests.ApiClient
                 }
                 """;
 
-            var func = response.To<string>;
+            var func = response.To<DeployRequest>;
             await func.Should().ThrowAsync<ApiException>().WithMessage(expectedMessage);
         }
 
@@ -44,7 +45,7 @@ namespace IntegrationTests.Tests.ApiClient
             var response = await ApiClient.Test.GetOk();
 
             //Then
-            var func = response.To<string>;
+            var func = response.To<DeployRequest>;
             await func.Should().ThrowAsync<ApiClientException>().WithMessage("Response content is null, empty or whitespace.");
         }
     }
