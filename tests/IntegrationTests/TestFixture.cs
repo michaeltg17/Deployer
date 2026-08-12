@@ -1,11 +1,9 @@
-using Api.Services;
 using Api.Settings;
 using Docker.DotNet;
 using Docker.DotNet.Models;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpLogging;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
@@ -59,26 +57,17 @@ public sealed class TestFixture : WebApplicationFactory<Program>, IAsyncDisposab
                 options.LoggingFields = HttpLoggingFields.RequestBody | HttpLoggingFields.ResponseBody);
             services.AddTransient<IStartupFilter, TestStartupFilter>();
             services.AddSingleton<IInjectableTestOutputSink>(InjectableTestOutputSink);
+
+            services.Configure<DeployerSettings>(deployerSettings =>
+            {
+                deployerSettings.KeePassDbPath = testKdbxPath;
+                deployerSettings.KeePassDbPassword = "test";
+                deployerSettings.ProjectsDir = TestProjectsDir;
+                deployerSettings.ThrowIfNoSecrets = true;
+            });
         });
 
         return base.CreateHost(builder);
-    }
-
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
-        ArgumentNullException.ThrowIfNull(builder);
-        base.ConfigureWebHost(builder);
-
-        builder.ConfigureAppConfiguration(config =>
-        {
-            config.AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                { nameof(DeployerSettings.KeePassDbPath), testKdbxPath },
-                { nameof(DeployerSettings.KeePassDbPassword), "test" },
-                { nameof(DeployerSettings.ProjectsDir), TestProjectsDir },
-                { nameof(DeployerSettings.ThrowIfNoSecrets), "true" },
-            });
-        });
     }
 
     private async Task CleanupTestContainers()

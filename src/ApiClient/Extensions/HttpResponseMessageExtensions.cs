@@ -2,6 +2,7 @@
 using ApiClient.Exceptions;
 using ApiClient.Validators;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 using System.Text.Json;
 
 namespace ApiClient.Extensions
@@ -15,6 +16,8 @@ namespace ApiClient.Extensions
 
         public static async Task<T> To<T>(this HttpResponseMessage response)
         {
+            ArgumentNullException.ThrowIfNull(response);
+
             var content = await response.Content.ReadAsStringAsync();
             if (string.IsNullOrWhiteSpace(content))
                 throw new ApiClientException("Response content is null, empty or whitespace.");
@@ -50,6 +53,16 @@ namespace ApiClient.Extensions
         {
             var response = await responseTask;
             return await response.To<T>();
+        }
+
+        public static async Task ValidateOrThrow(this HttpResponseMessage response, HttpStatusCode statusCode)
+        {
+            ArgumentNullException.ThrowIfNull(response);
+
+            if (response.StatusCode != statusCode)
+            {
+                throw new ApiException(await response.To<ProblemDetails>());
+            }
         }
     }
 }
