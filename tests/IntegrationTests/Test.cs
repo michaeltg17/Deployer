@@ -1,6 +1,5 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
-using Serilog;
 using Xunit;
 
 namespace IntegrationTests
@@ -12,15 +11,16 @@ namespace IntegrationTests
         internal TestFixture TestFixture { get; set; } = default!;
         internal IDockerClient DockerClient { get; set; } = default!;
 
-        public Test()
+        protected Test()
         {
             var config = new DockerClientConfiguration();
             DockerClient = config.CreateClient();
         }
 
-        public async ValueTask DisposeAsync()
+        public ValueTask DisposeAsync()
         {
             TestFixture.FlushLogger();
+            return ValueTask.CompletedTask;
         }
 
         public virtual ValueTask Initialize()
